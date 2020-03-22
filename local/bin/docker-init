@@ -34,11 +34,13 @@ fn_stage1() {
 	elif [ "${ARCH_ARCH}" = "aarch64" ]; then
 		TARGET_ARCH="aarch64"
 		TARGET_QEMU=qemu-aarch64-static
-		ARCH_MIRROR="http://ca.us.mirror.archlinuxarm.org"
+		#ARCH_MIRROR="http://ca.us.mirror.archlinuxarm.org"
+		ARCH_MIRROR="http://tw.mirror.archlinuxarm.org"
 	elif [ "${ARCH_ARCH}" = "armv7h" ]; then
 		TARGET_ARCH="armhf"
 		TARGET_QEMU=qemu-arm-static
-		ARCH_MIRROR="http://ca.us.mirror.archlinuxarm.org"
+		#ARCH_MIRROR="http://ca.us.mirror.archlinuxarm.org"
+		ARCH_MIRROR="http://tw.mirror.archlinuxarm.org"
 	fi
 
 	/build/extras/arch-bootstrap.sh -a ${ARCH_ARCH} -r "${ARCH_MIRROR}" /build/archroot
