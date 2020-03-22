@@ -130,6 +130,20 @@ EOF
 		fi
 	fi
 
+	#yaourt (stage1)
+	if [ -e extras/package-query-*-${ARCH_ARCH}.pkg.tar.xz -a -e extras/yaourt-*-any.pkg.tar.xz ]; then
+		cp extras/package-query-*-${ARCH_ARCH}.pkg.tar.xz ${TARGET_OUTPUT}/package-query.pkg.tar.xz
+		cp extras/yaourt-*-any.pkg.tar.xz ${TARGET_OUTPUT}/yaourt.pkg.tar.xz
+	fi
+
+	#yay
+	mkdir -p /build/yay
+	cd /build/yay
+	YAY_ADDR="https://github.com$(wget --no-check-certificate https://github.com/Jguer/yay/releases -q -O - | grep "/Jguer/yay/releases/download/.*/yay_.*_${ARCH_ARCH}.tar.gz" | head -1 | sed -e 's/^.*<a href="\([^"]*\)".*$/\1/g')"
+	wget -q -O - ${YAY_ADDR} | tar zx
+	cd yay_*
+	mv yay ${TARGET_OUTPUT}/usr/local/bin/
+
 	cd /
 	echo "[$(TZ="GMT-9" date '+%Y-%m-%d %H:%M:%S')] ==> OK"
 	echo
@@ -164,7 +178,6 @@ fn_stage2() {
 	local PACMAN_BASE_PKGS="bash coreutils diffutils filesystem findutils gettext glibc grep gzip less pacman procps-ng sed systemd haveged"
 	local PACMAN_REMOVE_PKGS="gzip less procps-ng haveged"
 
-	bash docker-install -c
 	pacman -Suy --noconfirm --overwrite "*" ${PACMAN_BASE_PKGS} ${PACMAN_REMOVE_PKGS} 
 	find /etc -name \*.pacnew -exec rm -rf {} \;
 
@@ -212,13 +225,18 @@ fn_stage2() {
 	#skel
 	cp -ar ${TARGET_OUTPUT}/etc/skel/. ${TARGET_OUTPUT}/root/
 
-	#yaourt
-	if [ -e extras/package-query-*-${ARCH_ARCH}.pkg.tar.xz -a -e extras/yaourt-*-any.pkg.tar.xz ]; then
-		cp extras/package-query-*-${ARCH_ARCH}.pkg.tar.xz ${TARGET_OUTPUT}/
-		cp extras/yaourt-*-any.pkg.tar.xz ${TARGET_OUTPUT}/
-		/usr/bin/pacman -Sy --noconfirm ; /usr/bin/pacman -U --noconfirm --asdeps /package-query-*; /usr/bin/pacman -U --noconfirm /yaourt-*-any.pkg.tar.xz
-		rm -rf ${TARGET_OUTPUT}/*.pkg.tar.xz
+	##yaourt
+	#if [ -e extras/package-query-*-${ARCH_ARCH}.pkg.tar.xz -a -e extras/yaourt-*-any.pkg.tar.xz ]; then
+	#	cp extras/package-query-*-${ARCH_ARCH}.pkg.tar.xz ${TARGET_OUTPUT}/
+	#	cp extras/yaourt-*-any.pkg.tar.xz ${TARGET_OUTPUT}/
+	#	/usr/bin/pacman -Sy --noconfirm ; /usr/bin/pacman -U --noconfirm --asdeps /package-query-*; /usr/bin/pacman -U --noconfirm /yaourt-*-any.pkg.tar.xz
+	#	rm -rf ${TARGET_OUTPUT}/*.pkg.tar.xz
+	#fi
+
+	if [ -e /package-query.pkg.tar.xz -a -e /yaourt.pkg.tar.xz ]; then
+		/usr/bin/pacman -Sy --noconfirm ; /usr/bin/pacman -U --noconfirm --asdeps /package-query.pkg.tar.xz; /usr/bin/pacman -U --noconfirm /yaourt.pkg.tar.xz
 	fi
+	rm -rf /package-query.pkg.tar.xz /yaourt.pkg.tar.xz
 
 	#makepkg
 	[ -e /usr/bin/makepkg ] && sed -i -e 's/(( EUID == 0 ))/false /g' /usr/bin/makepkg
@@ -229,9 +247,9 @@ fn_stage2() {
 }
 
 
-if [ -e /etc/pacman.conf ]; then
-	fn_stage2
-else
+if [ ! -e /etc/pacman.conf ]; then
 	fn_stage1
+else
+	fn_stage2
 fi
 

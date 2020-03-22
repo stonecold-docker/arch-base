@@ -1,6 +1,6 @@
 ARG BUILD_ARCH=x64
 
-FROM forumi0721/alpine-${BUILD_ARCH}-base as builder
+FROM forumi0721/alpine-${BUILD_ARCH}-base:latest as stage1
 
 LABEL maintainer="forumi0721@gmail.com"
 
@@ -12,9 +12,9 @@ RUN ["docker-init"]
 
 
 
-FROM scratch as bootstrap
+FROM scratch as stage2
 
-COPY --from=builder /build/archroot /
+COPY --from=stage1 /build/archroot /
 
 COPY local/. /usr/local/
 
@@ -28,7 +28,7 @@ RUN ["docker-init"]
 
 FROM scratch
 
-COPY --from=bootstrap / /
+COPY --from=stage2 / /
 
 ENTRYPOINT ["docker-run"]
 
