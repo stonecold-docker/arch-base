@@ -141,8 +141,8 @@ EOF
 	#yay
 	mkdir -p /build/yay
 	cd /build/yay
-	YAY_ADDR="https://github.com$(wget --no-check-certificate https://github.com/Jguer/yay/releases -q -O - | grep "/Jguer/yay/releases/download/.*/yay_.*_${ARCH_ARCH}.tar.gz" | head -1 | sed -e 's/^.*<a href="\([^"]*\)".*$/\1/g')"
-	wget -q -O - ${YAY_ADDR} | tar zx
+	YAY_ADDR="https://github.com$(wget --no-check-certificate -q -O - https://github.com/Jguer/yay/releases | grep "/Jguer/yay/releases/download/.*/yay_.*_${ARCH_ARCH}.tar.gz" | head -1 | sed -e 's/^.*<a href="\([^"]*\)".*$/\1/g')"
+	wget --no-check-certificate -q -O - ${YAY_ADDR} | tar zx
 	cd yay_*
 	mv yay ${TARGET_OUTPUT}/usr/local/bin/
 
