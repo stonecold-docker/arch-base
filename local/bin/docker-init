@@ -250,6 +250,14 @@ fn_stage2() {
 	[ -e /usr/bin/makepkg ] && sed -i -e 's/(( EUID == 0 ))/false /g' /usr/bin/makepkg
 
 	docker-install -d -c
+
+	cd /
+	mkdir -p usr/local/bin
+	echo "#!/bin/sh" > usr/local/bin/docker-init
+	echo >> usr/local/bin/docker-init
+	find . -not -path './dev/*' -not -path './proc/*' -not -path './sys/*' -exec stat -c "chmod %a \"%n\"" "{}" \; | grep -v '^chmod [0-9][0-9][0-9] ' | sed -e 's/^\(chmod [0-9]\+\) "\./\1 "/g' >> usr/local/bin/docker-init
+	chmod 755 usr/local/bin/docker-init
+
 	echo "[$(TZ="GMT-9" date '+%Y-%m-%d %H:%M:%S')] ==> OK"
 	echo
 }

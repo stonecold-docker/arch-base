@@ -30,5 +30,11 @@ FROM scratch
 
 COPY --from=stage2 / /
 
+#RUN ["docker-build-start"]
+
+RUN ["docker-init"]
+
+#RUN ["docker-build-end"]
+
 ENTRYPOINT ["docker-run"]
 
