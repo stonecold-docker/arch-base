@@ -1,23 +1,13 @@
 # arch-base
+![Docker Pulls](https://img.shields.io/docker/pulls/forumi0721/arch-base)
+![Docker Stars](https://img.shields.io/docker/stars/forumi0721/arch-base)
 
-#### [arch-x64-base](https://hub.docker.com/r/forumi0721/arch-x64-base/)
-![Docker Image Version (tag latest semver)](https://img.shields.io/docker/v/forumi0721/arch-x64-base/latest)
-![Docker Image Size (tag)](https://img.shields.io/docker/image-size/forumi0721/arch-x64-base/latest)
-![MicroBadger Layers (tag)](https://img.shields.io/microbadger/layers/forumi0721/arch-x64-base/latest)
-![Docker Pulls](https://img.shields.io/docker/pulls/forumi0721/arch-x64-base)
-![Docker Stars](https://img.shields.io/docker/stars/forumi0721/arch-x64-base)
-#### [arch-aarch64-base](https://hub.docker.com/r/forumi0721/arch-aarch64-base/)
-![Docker Image Version (tag latest semver)](https://img.shields.io/docker/v/forumi0721/arch-aarch64-base/latest)
-![Docker Image Size (tag)](https://img.shields.io/docker/image-size/forumi0721/arch-aarch64-base/latest)
-![MicroBadger Layers (tag)](https://img.shields.io/microbadger/layers/forumi0721/arch-aarch64-base/latest)
-![Docker Pulls](https://img.shields.io/docker/pulls/forumi0721/arch-aarch64-base)
-![Docker Stars](https://img.shields.io/docker/stars/forumi0721/arch-aarch64-base)
-#### [arch-armhf-base](https://hub.docker.com/r/forumi0721/arch-armhf-base/)
-![Docker Image Version (tag latest semver)](https://img.shields.io/docker/v/forumi0721/arch-armhf-base/latest)
-![Docker Image Size (tag)](https://img.shields.io/docker/image-size/forumi0721/arch-armhf-base/latest)
-![MicroBadger Layers (tag)](https://img.shields.io/microbadger/layers/forumi0721/arch-armhf-base/latest)
-![Docker Pulls](https://img.shields.io/docker/pulls/forumi0721/arch-armhf-base)
-![Docker Stars](https://img.shields.io/docker/stars/forumi0721/arch-armhf-base)
+### x64
+![Docker Image Version](https://img.shields.io/docker/v/forumi0721/arch-base/latest)
+![Docker Image Size](https://img.shields.io/docker/image-size/forumi0721/arch-base/latest)
+### aarch64
+![Docker Image Version](https://img.shields.io/docker/v/forumi0721/arch-base/aarch64)
+![Docker Image Size](https://img.shields.io/docker/image-size/forumi0721/arch-base/aarch64)
 
 
 
@@ -25,7 +15,7 @@
 #### Description
 
 * Distribution : [Arch Linux](https://www.archlinux.org/)
-* Architecture : x64,aarch64,armhf
+* Architecture : x64,aarch64
 * Appplication : -
 
 
@@ -35,7 +25,7 @@
 
 ```sh
 docker run -i -t --rm \
-           forumi0721/arch-[ARCH]-base:latest
+           forumi0721/arch-base:[ARCH_TAG]
 ```
 
 

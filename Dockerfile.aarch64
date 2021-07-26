@@ -1,16 +1,12 @@
-ARG BUILD_ARCH=x64
+ARG BUILD_TAG=latest
 
-#FROM forumi0721debian${BUILD_ARCH}build/debian-${BUILD_ARCH}-qemu-static-builder:latest as qemu
-
-FROM forumi0721/alpine-${BUILD_ARCH}-base:latest as stage1
+FROM forumi0721/alpine-base:${BUILD_TAG} as stage1
 
 LABEL maintainer="forumi0721@gmail.com"
 
 ENV TARGET_ARCH=aarch64
 
 COPY local/. /usr/local/
-
-#COPY --from=qemu /output/qemu-static /usr/local/bin
 
 RUN ["docker-init"]
 
