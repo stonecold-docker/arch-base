@@ -12,11 +12,27 @@ RUN ["docker-init"]
 
 
 
+FROM forumi0721/arch-base:${BUILD_TAG} as yaourt
+
+LABEL maintainer="forumi0721@gmail.com"
+
+COPY local/. /usr/local/
+
+#RUN ["docker-build-start"]
+
+RUN ["docker-build"]
+
+#RUN ["docker-build-end"]
+
+
+
 FROM scratch as stage2
 
 LABEL maintainer="forumi0721@gmail.com"
 
 COPY --from=stage1 /build/archroot /
+
+COPY --from=yaourt /output /output
 
 COPY local/. /usr/local/
 

@@ -113,9 +113,9 @@ EOF
 		ln -sf docker-build-aarch64 "${TARGET_OUTPUT}/usr/local/bin/docker-build-start"
 		ln -sf docker-build-aarch64 "${TARGET_OUTPUT}/usr/local/bin/docker-build-end"
 	else
-		cp -f extras/docker-build-x64 "${TARGET_OUTPUT}/usr/local/bin/docker-build"
-		ln -sf docker-build "${TARGET_OUTPUT}/usr/local/bin/docker-build-start"
-		ln -sf docker-build "${TARGET_OUTPUT}/usr/local/bin/docker-build-end"
+		cp -f extras/docker-build-x64 "${TARGET_OUTPUT}/usr/local/bin/docker-build-x64"
+		ln -sf docker-build-x64 "${TARGET_OUTPUT}/usr/local/bin/docker-build-start"
+		ln -sf docker-build-x64 "${TARGET_OUTPUT}/usr/local/bin/docker-build-end"
 	fi
 
 	#docker-adduser
@@ -143,16 +143,16 @@ EOF
 	if [ "${TARGET_ARCH}" = "x64" ]; then
 		local patched_glibc=glibc-linux4-2.33-4-x86_64.pkg.tar.zst
 		wget --no-check-certificate -q -o ${TARGET_OUTPUT}/${patched_glibc} "https://repo.archlinuxcn.org/x86_64/${patched_glibc}"
-		bsdtar -C ${TARGET_OUTPUT}/ -xvf "${patched_glibc}"
+		bsdtar -C ${TARGET_OUTPUT}/ -xf "${patched_glibc}"
 		rm -rf "${TARGET_OUTPUT}/${patched_glibc}"
 		rm -rf ${TARGET_OUTPUT}/.BUILDINFO ${TARGET_OUTPUT}/.INSTALL ${TARGET_OUTPUT}/.MTREE ${TARGET_OUTPUT}/.PKGINFO
 	fi
 
-	#yaourt (stage1)
-	if [ -e extras/package-query-*-${ARCH_ARCH}.pkg.tar.xz -a -e extras/yaourt-*-any.pkg.tar.xz ]; then
-		cp extras/package-query-*-${ARCH_ARCH}.pkg.tar.xz ${TARGET_OUTPUT}/package-query.pkg.tar.xz
-		cp extras/yaourt-*-any.pkg.tar.xz ${TARGET_OUTPUT}/yaourt.pkg.tar.xz
-	fi
+	##yaourt (stage1)
+	#if [ -e extras/package-query-*-${ARCH_ARCH}.pkg.tar.xz -a -e extras/yaourt-*-any.pkg.tar.xz ]; then
+	#	cp extras/package-query-*-${ARCH_ARCH}.pkg.tar.xz ${TARGET_OUTPUT}/package-query.pkg.tar.xz
+	#	cp extras/yaourt-*-any.pkg.tar.xz ${TARGET_OUTPUT}/yaourt.pkg.tar.xz
+	#fi
 
 	#yay
 	mkdir -p /build/yay
@@ -194,16 +194,18 @@ fn_stage2() {
 	ARCH_ARCH=${ARCH_ARCH/armhf/armv7h}
 	ARCH_ARCH=${ARCH_ARCH/aarch64/aarch64}
 	#local PACMAN_BASE_PKGS="bash coreutils diffutils filesystem findutils gettext glibc grep gzip less pacman procps-ng sed systemd haveged"
-	local PACMAN_BASE_PKGS="bash coreutils diffutils filesystem findutils gettext grep gzip less pacman procps-ng sed systemd haveged"
+	local PACMAN_BASE_PKGS="bash coreutils diffutils filesystem findutils gettext grep gzip less pacman procps-ng sed systemd haveged gawk"
 	local PACMAN_REMOVE_PKGS="gzip less procps-ng haveged"
 	pacman -Suy --noconfirm --overwrite "*" ${PACMAN_BASE_PKGS} ${PACMAN_REMOVE_PKGS}  || true
 	find /etc -name \*.pacnew
 	find /etc -name \*.pacnew -exec rm -rf {} \;
 
+	passwd -d root
+
 	if [ "$(uname -m)" = "x86_64" ]; then
 		local patched_glibc=glibc-linux4-2.33-4-x86_64.pkg.tar.zst
 		curl -o ${TARGET_OUTPUT}/${patched_glibc} "https://repo.archlinuxcn.org/x86_64/${patched_glibc}"
-		bsdtar -C ${TARGET_OUTPUT}/ -xvf "${patched_glibc}"
+		bsdtar -C ${TARGET_OUTPUT}/ -xf "${patched_glibc}"
 		rm -rf "${TARGET_OUTPUT}/${patched_glibc}"
 		rm -rf ${TARGET_OUTPUT}/.BUILDINFO ${TARGET_OUTPUT}/.INSTALL ${TARGET_OUTPUT}/.MTREE ${TARGET_OUTPUT}/.PKGINFO
 	fi
@@ -255,17 +257,10 @@ fn_stage2() {
 	cp -ar ${TARGET_OUTPUT}/etc/skel/. ${TARGET_OUTPUT}/root/
 
 	##yaourt
-	#if [ -e extras/package-query-*-${ARCH_ARCH}.pkg.tar.xz -a -e extras/yaourt-*-any.pkg.tar.xz ]; then
-	#	cp extras/package-query-*-${ARCH_ARCH}.pkg.tar.xz ${TARGET_OUTPUT}/
-	#	cp extras/yaourt-*-any.pkg.tar.xz ${TARGET_OUTPUT}/
-	#	/usr/bin/pacman -Sy --noconfirm ; /usr/bin/pacman -U --noconfirm --asdeps /package-query-*; /usr/bin/pacman -U --noconfirm /yaourt-*-any.pkg.tar.xz
-	#	rm -rf ${TARGET_OUTPUT}/*.pkg.tar.xz
-	#fi
-
-	if [ -e /package-query.pkg.tar.xz -a -e /yaourt.pkg.tar.xz ]; then
-		/usr/bin/pacman -Sy --noconfirm ; /usr/bin/pacman -U --noconfirm --asdeps /package-query.pkg.tar.xz; /usr/bin/pacman -U --noconfirm /yaourt.pkg.tar.xz
+	if [ -e /output ]; then
+		/usr/bin/pacman -Sy --noconfirm ; /usr/bin/pacman -U --noconfirm --asdeps /output/package-query-*.pkg.tar.zst; /usr/bin/pacman -U --noconfirm /output/yaourt-*.pkg.tar.zst
 	fi
-	rm -rf /package-query.pkg.tar.xz /yaourt.pkg.tar.xz
+	rm -rf /output
 
 	#makepkg
 	[ -e /usr/bin/makepkg ] && sed -i -e 's/(( EUID == 0 ))/false /g' /usr/bin/makepkg
@@ -273,11 +268,11 @@ fn_stage2() {
 	docker-install -d -c
 
 	cd /
-	mkdir -p usr/local/bin
-	echo "#!/bin/sh" > usr/local/bin/docker-init
-	echo >> usr/local/bin/docker-init
-	find . -not -path './dev/*' -not -path './proc/*' -not -path './sys/*' -exec stat -c "chmod %a \"%n\"" "{}" \; | grep -v '^chmod [0-9][0-9][0-9] ' | sed -e 's/^\(chmod [0-9]\+\) "\./\1 "/g' >> usr/local/bin/docker-init
-	chmod 755 usr/local/bin/docker-init
+    mkdir -p usr/local/bin
+    echo "#!/bin/sh" > usr/local/bin/docker-init
+    echo >> usr/local/bin/docker-init
+    find . -not -path './dev/*' -not -path './proc/*' -not -path './sys/*' -exec stat -c "chmod %a \"%n\"" "{}" \; | grep -v '^chmod [0-9][0-9][0-9] ' | sed -e 's/^\(chmod [0-9]\+\) "\./\1 "/g' >> usr/local/bin/docker-init
+    chmod 755 usr/local/bin/docker-init
 
 	echo "[$(TZ="GMT-9" date '+%Y-%m-%d %H:%M:%S')] ==> OK"
 	echo
