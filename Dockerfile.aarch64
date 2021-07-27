@@ -1,5 +1,7 @@
 ARG BUILD_TAG=latest
 
+ARG BUILD_TAG_YAOURT=aarch64
+
 FROM forumi0721/alpine-base:${BUILD_TAG} as stage1
 
 LABEL maintainer="forumi0721@gmail.com"
@@ -12,7 +14,7 @@ RUN ["docker-init"]
 
 
 
-FROM forumi0721/arch-base:${BUILD_TAG} as yaourt
+FROM forumi0721/arch-base:${BUILD_TAG_YAOURT} as yaourt
 
 LABEL maintainer="forumi0721@gmail.com"
 
