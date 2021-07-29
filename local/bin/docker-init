@@ -30,8 +30,8 @@ fn_stage1() {
 	ARCH_MIRROR=
 	if [ "${ARCH_ARCH}" = "x86_64" ]; then
 		TARGET_ARCH="x64"
-		#ARCH_MIRROR="http://ftp.lanet.kr/pub/archlinux"
-		ARCH_MIRROR="http://ftp.harukasan.org/archlinux"
+		ARCH_MIRROR="http://ftp.lanet.kr/pub/archlinux"
+		#ARCH_MIRROR="http://ftp.harukasan.org/archlinux"
 	elif [ "${ARCH_ARCH}" = "aarch64" ]; then
 		if [ -e /usr/local/bin/qemu-aarch64-static ]; then
 			cp /usr/local/bin/qemu-aarch64-static /build/extras/qemu-aarch64-static
@@ -272,6 +272,8 @@ fn_stage2() {
     echo "#!/bin/sh" > usr/local/bin/docker-init
     echo >> usr/local/bin/docker-init
     find . -not -path './dev/*' -not -path './proc/*' -not -path './sys/*' -exec stat -c "chmod %a \"%n\"" "{}" \; | grep -v '^chmod [0-9][0-9][0-9] ' | sed -e 's/^\(chmod [0-9]\+\) "\./\1 "/g' >> usr/local/bin/docker-init
+    echo >> usr/local/bin/docker-init
+    echo "passwd -d root" >> usr/local/bin/docker-init
     chmod 755 usr/local/bin/docker-init
 
 	echo "[$(TZ="GMT-9" date '+%Y-%m-%d %H:%M:%S')] ==> OK"
