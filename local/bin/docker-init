@@ -47,8 +47,8 @@ fn_stage1() {
 		fi
 		TARGET_ARCH="armhf"
 		TARGET_QEMU=qemu-arm-static
-		#ARCH_MIRROR="http://ca.us.mirror.archlinuxarm.org"
-		ARCH_MIRROR="http://tw.mirror.archlinuxarm.org"
+		#ARCH_MIRROR=http://ca.us.mirror.archlinuxarm.org
+		ARCH_MIRROR=http://tw.mirror.archlinuxarm.org
 	fi
 
 	/build/extras/arch-bootstrap.sh -a ${ARCH_ARCH} -r "${ARCH_MIRROR}" /build/archroot
