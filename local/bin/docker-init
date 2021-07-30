@@ -30,16 +30,17 @@ fn_stage1() {
 	ARCH_MIRROR=
 	if [ "${ARCH_ARCH}" = "x86_64" ]; then
 		TARGET_ARCH="x64"
-		ARCH_MIRROR="http://ftp.lanet.kr/pub/archlinux"
-		#ARCH_MIRROR="http://ftp.harukasan.org/archlinux"
+		#ARCH_MIRROR=http://ftp.lanet.kr/pub/archlinux
+		#ARCH_MIRROR=http://ftp.harukasan.org/archlinux
+		ARCH_MIRROR=http://mirror.anigil.com/archlinux
 	elif [ "${ARCH_ARCH}" = "aarch64" ]; then
 		if [ -e /usr/local/bin/qemu-aarch64-static ]; then
 			cp /usr/local/bin/qemu-aarch64-static /build/extras/qemu-aarch64-static
 		fi
 		TARGET_ARCH="aarch64"
 		TARGET_QEMU=qemu-aarch64-static
-		#ARCH_MIRROR="http://ca.us.mirror.archlinuxarm.org"
-		ARCH_MIRROR="http://tw.mirror.archlinuxarm.org"
+		#ARCH_MIRROR=http://ca.us.mirror.archlinuxarm.org
+		ARCH_MIRROR=http://tw.mirror.archlinuxarm.org
 	elif [ "${ARCH_ARCH}" = "armv7h" ]; then
 		if [ -e /usr/local/bin/qemu-arm-static ]; then
 			cp /usr/local/bin/qemu-arm-static /build/extras/qemu-arm-static
