@@ -258,7 +258,11 @@ fn_stage2() {
 
 	##yaourt
 	if [ -e /output ]; then
-		/usr/bin/pacman -Sy --noconfirm ; /usr/bin/pacman -U --noconfirm --asdeps /output/package-query-*.pkg.tar.zst; /usr/bin/pacman -U --noconfirm /output/yaourt-*.pkg.tar.zst
+		if [ "$(uname -m)" = "x86_64" ]; then
+			/usr/bin/pacman -Sy --noconfirm ; /usr/bin/pacman -U --noconfirm --asdeps /output/package-query-*.pkg.tar.zst; /usr/bin/pacman -U --noconfirm /output/yaourt-*.pkg.tar.zst
+		else
+			/usr/bin/pacman -Sy --noconfirm ; /usr/bin/pacman -U --noconfirm --asdeps /output/package-query-*.pkg.tar.xz; /usr/bin/pacman -U --noconfirm /output/yaourt-*.pkg.tar.xz
+		fi
 	fi
 	rm -rf /output
 

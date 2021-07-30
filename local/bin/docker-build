@@ -22,13 +22,21 @@ mkdir -p /build
 git clone https://aur.archlinux.org/package-query.git --depth 1
 cd package-query
 makepkg -si --noconfirm
-cp *.pkg.tar.zst /output/
+if [ "$(uname -m)" = "x86_64" ]; then
+	cp *.pkg.tar.zst /output/
+else
+	cp *.pkg.tar.xz /output/
+fi
 cd ..
 
 git clone https://aur.archlinux.org/yaourt.git --depth 1
 cd yaourt
 makepkg -si --noconfirm
-cp *.pkg.tar.zst /output/
+if [ "$(uname -m)" = "x86_64" ]; then
+	cp *.pkg.tar.zst /output/
+else
+	cp *.pkg.tar.xz /output/
+fi
 cd ..
 
 cd /
