@@ -178,7 +178,7 @@ EOF
 		mv ${TARGET_OUTPUT}/usr/local/busybox/bin/busybox.static ${TARGET_OUTPUT}/usr/local/busybox/busybox.static
 		chmod +s ${TARGET_OUTPUT}/usr/local/busybox/busybox.static
 		rm -rf ${TARGET_OUTPUT}/usr/local/busybox/bin ${TARGET_OUTPUT}/usr/local/busybox/.PKGINFO ${TARGET_OUTPUT}/usr/local/busybox/.SIGN.RSA*
-		for applet in ${TARGET_OUTPUT}/usr/local/busybox/busybox.static --list
+		for applet in $(${TARGET_OUTPUT}/usr/local/busybox/busybox.static --list)
 		do
 			ln -s busybox.static ${TARGET_OUTPUT}/usr/local/busybox/${applet}
 		done
