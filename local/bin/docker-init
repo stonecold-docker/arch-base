@@ -222,7 +222,7 @@ fn_stage2() {
 	ARCH_ARCH=${ARCH_ARCH/aarch64/aarch64}
 	#local PACMAN_BASE_PKGS="bash coreutils diffutils filesystem findutils gettext glibc grep gzip less pacman procps-ng sed systemd haveged"
 	local PACMAN_BASE_PKGS="bash coreutils diffutils filesystem findutils gettext grep gzip less pacman procps-ng sed systemd haveged gawk"
-	local PACMAN_REMOVE_PKGS="gzip less procps-ng haveged tar wget"
+	local PACMAN_REMOVE_PKGS="gzip less procps-ng haveged"
 	pacman -Suy --noconfirm --overwrite "*" ${PACMAN_BASE_PKGS} ${PACMAN_REMOVE_PKGS}  || true
 	find /etc -name \*.pacnew
 	find /etc -name \*.pacnew -exec rm -rf {} \;
@@ -296,6 +296,7 @@ fn_stage2() {
 	#makepkg
 	[ -e /usr/bin/makepkg ] && sed -i -e 's/(( EUID == 0 ))/false /g' /usr/bin/makepkg
 
+	pacman -Rsn --noconfirm ${PACMAN_REMOVE_PKGS} || true
 	docker-install -d -c
 
 	cd /
