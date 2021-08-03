@@ -164,6 +164,32 @@ EOF
 	mv yay ${TARGET_OUTPUT}/usr/local/bin/
 
 	cd /
+
+	#busybox
+	local busybox=
+	if [ "$(uname -m)" = "x86_64" ]; then
+		busybox="https://mirror.xtom.com.hk/alpine/latest-stable/main/x86_64/$(wget --no-check-certificate https://mirror.xtom.com.hk/alpine/latest-stable/main/x86_64/ -q -O - | grep busybox-static | sed -e 's/^.*href="\([^"]*\)".*$/\1/g')"
+	elif [ "$(uname -m)" = "aarch64" ]; then
+		busybox="https://mirror.xtom.com.hk/alpine/latest-stable/main/aarch64/$(wget --no-check-certificate https://mirror.xtom.com.hk/alpine/latest-stable/main/aarch64/ -q -O - | grep busybox-static | sed -e 's/^.*href="\([^"]*\)".*$/\1/g')"
+	fi
+	if [ ! -z "${busybox}" ]; then
+		mkdir -p ${TARGET_OUTPUT}/usr/local/busybox
+		wget --no-check-certificate "${busybox}" -q -O - | tar zxf - -C ${TARGET_OUTPUT}/usr/local/busybox/
+		mv ${TARGET_OUTPUT}/usr/local/busybox/bin/busybox.static ${TARGET_OUTPUT}/usr/local/busybox/busybox.static
+		chmod +s ${TARGET_OUTPUT}/usr/local/busybox/busybox.static
+		rm -rf ${TARGET_OUTPUT}/usr/local/busybox/bin ${TARGET_OUTPUT}/usr/local/busybox/.PKGINFO ${TARGET_OUTPUT}/usr/local/busybox/.SIGN.RSA*
+		for applet in ${TARGET_OUTPUT}/usr/local/busybox/busybox.static --list
+		do
+			ln -s busybox.static ${TARGET_OUTPUT}/usr/local/busybox/${applet}
+		done
+		ln -s busybox.static ${TARGET_OUTPUT}/usr/local/busybox/busybox
+		cat << EOF > ${TARGET_OUTPUT}/etc/profile.d/busybox.sh
+#!/bin/sh
+
+export PATH=\${PATH}:/usr/local/busybox
+EOF
+	fi
+
 	echo "[$(TZ="GMT-9" date '+%Y-%m-%d %H:%M:%S')] ==> OK"
 	echo
 
@@ -196,7 +222,7 @@ fn_stage2() {
 	ARCH_ARCH=${ARCH_ARCH/aarch64/aarch64}
 	#local PACMAN_BASE_PKGS="bash coreutils diffutils filesystem findutils gettext glibc grep gzip less pacman procps-ng sed systemd haveged"
 	local PACMAN_BASE_PKGS="bash coreutils diffutils filesystem findutils gettext grep gzip less pacman procps-ng sed systemd haveged gawk"
-	local PACMAN_REMOVE_PKGS="gzip less procps-ng haveged"
+	local PACMAN_REMOVE_PKGS="gzip less procps-ng haveged tar wget"
 	pacman -Suy --noconfirm --overwrite "*" ${PACMAN_BASE_PKGS} ${PACMAN_REMOVE_PKGS}  || true
 	find /etc -name \*.pacnew
 	find /etc -name \*.pacnew -exec rm -rf {} \;
@@ -274,12 +300,12 @@ fn_stage2() {
 
 	cd /
     mkdir -p usr/local/bin
-    echo "#!/bin/sh" > usr/local/bin/docker-init
-    echo >> usr/local/bin/docker-init
-    find . -not -path './dev/*' -not -path './proc/*' -not -path './sys/*' -exec stat -c "chmod %a \"%n\"" "{}" \; | grep -v '^chmod [0-9][0-9][0-9] ' | sed -e 's/^\(chmod [0-9]\+\) "\./\1 "/g' >> usr/local/bin/docker-init
-    echo >> usr/local/bin/docker-init
-    echo "passwd -d root" >> usr/local/bin/docker-init
-    chmod 755 usr/local/bin/docker-init
+    echo "#!/bin/sh" > usr/local/bin/docker-permission
+    echo >> usr/local/bin/docker-permission
+    find . -not -path './dev/*' -not -path './proc/*' -not -path './sys/*' -exec stat -c "chmod %a \"%n\"" "{}" \; | grep -v '^chmod [0-9][0-9][0-9] ' | sed -e 's/^\(chmod [0-9]\+\) "\./\1 "/g' >> usr/local/bin/docker-permission
+    echo >> usr/local/bin/docker-permission
+    echo "passwd -d root" >> usr/local/bin/docker-permission
+    chmod 755 usr/local/bin/docker-permission
 
 	echo "[$(TZ="GMT-9" date '+%Y-%m-%d %H:%M:%S')] ==> OK"
 	echo
@@ -288,7 +314,9 @@ fn_stage2() {
 
 if [ ! -e /etc/pacman.conf ]; then
 	fn_stage1
-else
+elif [ ! -e /usr/local/bin/docker-permission ]; then
 	fn_stage2
+else
+	/usr/local/bin/docker-permission
 fi
 
