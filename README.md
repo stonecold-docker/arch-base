@@ -8,6 +8,9 @@
 ### aarch64
 ![Docker Image Version](https://img.shields.io/docker/v/forumi0721/arch-base/aarch64)
 ![Docker Image Size](https://img.shields.io/docker/image-size/forumi0721/arch-base/aarch64)
+### armv7
+![Docker Image Version](https://img.shields.io/docker/v/forumi0721/arch-base/armv7)
+![Docker Image Size](https://img.shields.io/docker/image-size/forumi0721/arch-base/armv7)
 
 
 
@@ -15,7 +18,7 @@
 #### Description
 
 * Distribution : [Arch Linux](https://www.archlinux.org/)
-* Architecture : x64,aarch64
+* Architecture : x64,aarch64,armv7
 * Appplication : -
 
 
@@ -36,13 +39,7 @@ docker run -i -t --rm \
 ```dockerfile
 FROM forumi0721/arch-[ARCH]-base:latest
 
-#For cross compile on dockerhub (aarch64,armhf)
-RUN ["docker-build-start"]
-
 RUN 'build-code'
-
-#For cross compile on dockerhub  (aarch64,armhf)
-RUN ["docker-build-end"]
 ```
 
 

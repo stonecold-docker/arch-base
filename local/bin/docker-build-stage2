@@ -1,0 +1,93 @@
+#!/bin/sh
+
+set -e
+
+echo "[$(TZ="GMT-9" date '+%Y-%m-%d %H:%M:%S')] ==> Executing stage2"
+TARGET_OUTPUT=/
+TARGET_LOCALE=${TARGET_LOCALE:-ko_KR.UTF-8}
+TARGET_TIMEZONE=${TARGET_TIMEZONE:-Asia/Seoul}
+ARCH_ARCH=${BUILD_TAG}
+ARCH_ARCH=${ARCH_ARCH/x64/x86_64}
+ARCH_ARCH=${ARCH_ARCH/aarch64/aarch64}
+ARCH_ARCH=${ARCH_ARCH/armv7/armv7h}
+#PACMAN_BASE_PKGS="bash coreutils diffutils filesystem findutils gettext glibc grep gzip less pacman procps-ng sed systemd haveged"
+PACMAN_BASE_PKGS="bash coreutils diffutils filesystem findutils gettext grep gzip less pacman procps-ng sed systemd haveged gawk"
+PACMAN_REMOVE_PKGS="gzip less procps-ng haveged"
+pacman -Suy --noconfirm --overwrite "*" ${PACMAN_BASE_PKGS} ${PACMAN_REMOVE_PKGS}  || true
+find /etc -name \*.pacnew -exec rm -rf {} \;
+
+passwd -d root
+
+if [ "${ARCH_ARCH}" = "x86_64" ]; then
+	patched_glibc=glibc-linux4-2.33-4-x86_64.pkg.tar.zst
+	curl -o ${TARGET_OUTPUT}/${patched_glibc} "https://repo.archlinuxcn.org/x86_64/${patched_glibc}"
+	bsdtar -C ${TARGET_OUTPUT}/ -xf "${patched_glibc}"
+	rm -rf "${TARGET_OUTPUT}/${patched_glibc}"
+	rm -rf ${TARGET_OUTPUT}/.BUILDINFO ${TARGET_OUTPUT}/.INSTALL ${TARGET_OUTPUT}/.MTREE ${TARGET_OUTPUT}/.PKGINFO
+fi
+
+#users gid
+sed -i -e "s/^users:x:.*$/users:x:100:/g" ${TARGET_OUTPUT}/etc/group
+
+##resolve
+#cat <<- EOF > ${TARGET_OUTPUT}/etc/resolv.conf
+#nameserver 1.1.1.1
+#nameserver 1.0.0.1
+#EOF
+
+#systemd-sysusers
+if [ -e "${TARGET_OUTPUT}/usr/bin/systemd-sysusers" ]; then
+	/usr/bin/systemd-sysusers
+fi
+
+#update-ca-trust
+update-ca-trust
+
+#keyring
+set +e
+/usr/bin/haveged ; /usr/bin/rm -fr /etc/pacman.d/gnupg ; /usr/bin/pacman-key --init ; /usr/bin/pacman-key --populate ${ARCH_KEYRING}
+set -e
+
+#basic config
+#echo "${PACMAN_MIRRORLIST}" > ${TARGET_OUTPUT}/etc/pacman.d/mirrorlist
+sed -i -e "s/\(Architecture =\) auto/\1 ${ARCH_ARCH}/g" ${TARGET_OUTPUT}/etc/pacman.conf
+sed -i -e "s/#\(NoUpgrade   =\)/\1 \/etc\/pacman.d\/mirrorlist/g" ${TARGET_OUTPUT}/etc/pacman.conf
+
+#locale
+#if [ -e ${TARGET_OUTPUT}/usr/share/i18n/charmaps/UTF-8.gz ]; then
+#	rm -rf ${TARGET_OUTPUT}/usr/share/i18n/charmaps/UTF-8
+#	gzip -dk ${TARGET_OUTPUT}/usr/share/i18n/charmaps/UTF-8.gz
+#fi
+sed -i -e "s/#*[ ]*${TARGET_LOCALE}/${TARGET_LOCALE}/g" ${TARGET_OUTPUT}/etc/locale.gen
+echo "LANG=${TARGET_LOCALE}" >> ${TARGET_OUTPUT}/etc/locale.conf
+echo "LC_ALL=${TARGET_LOCALE}" >> ${TARGET_OUTPUT}/etc/locale.conf
+locale-gen
+
+#timezone
+if [ -e "${TARGET_OUTPUT}/usr/share/zoneinfo/${TARGET_TIMEZONE}" ]; then
+	rm -rf ${TARGET_OUTPUT}/etc/localtime
+	ln -sf /usr/share/zoneinfo/${TARGET_TIMEZONE} ${TARGET_OUTPUT}/etc/localtime
+fi
+
+#skel
+cp -ar ${TARGET_OUTPUT}/etc/skel/. ${TARGET_OUTPUT}/root/
+
+##yaourt
+if [ -e /output ]; then
+	cd /output
+	package_query_file="$(ls package-query-*.pkg.tar.*)"
+	yaourt_file="$(ls yaourt-*.pkg.tar.*)"
+	if [ ! -z "${package_query_file}" -a ! -z "${yaourt_file}" ]; then
+		/usr/bin/pacman -Sy --noconfirm ; /usr/bin/pacman -U --noconfirm --asdeps ${package_query_file} ; /usr/bin/pacman -U --noconfirm ${yaourt_file}
+	fi
+fi
+rm -rf /output
+
+#makepkg
+[ -e /usr/bin/makepkg ] && sed -i -e 's/(( EUID == 0 ))/false /g' /usr/bin/makepkg
+
+pacman -Rsn --noconfirm ${PACMAN_REMOVE_PKGS} || true
+cd /
+echo "[$(TZ="GMT-9" date '+%Y-%m-%d %H:%M:%S')] ==> OK"
+echo
+

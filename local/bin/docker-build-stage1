@@ -1,0 +1,177 @@
+#!/bin/sh
+
+set -e
+
+echo "[$(TZ="GMT-9" date '+%Y-%m-%d %H:%M:%S')] ==> Installing required packages"
+PKG_LIB=""
+PKG_DEV="bash git curl xz zstd libarchive-tools util-linux e2fsprogs"
+docker-install -r -u ${PKG_LIB} ${PKG_DEV}
+echo "[$(TZ="GMT-9" date '+%Y-%m-%d %H:%M:%S')] ==> OK"
+echo
+
+echo "[$(TZ="GMT-9" date '+%Y-%m-%d %H:%M:%S')] ==> Downloading bootstrap"
+mkdir -p /build
+cd /build
+git clone https://forumi0721@bitbucket.org/forumi0721/docker-dist-extras.git extras --depth=1
+if [ "$(uname -m)" = "x86_64" -a "${BUILD_TAG}" = "aarch64" ]; then
+	cp extras/qemu-aarch64-static /usr/bin
+	chmod +x /usr/bin/qemu-aarch64-static
+elif [ "$(uname -m)" = "x86_64" -a "${BUILD_TAG}" = "armv7" ]; then
+	cp extras/qemu-arm-static /usr/bin
+	chmod +x /usr/bin/qemu-arm-static
+fi
+cd /
+echo "[$(TZ="GMT-9" date '+%Y-%m-%d %H:%M:%S')] ==> OK"
+echo
+
+echo "[$(TZ="GMT-9" date '+%Y-%m-%d %H:%M:%S')] ==> Executing bootstrap"
+TARGET_OUTPUT=/build/archroot
+TARGET_QEMU=
+mkdir -p ${TARGET_OUTPUT}
+cd /build
+ARCH_ARCH=${BUILD_TAG}
+ARCH_ARCH=${ARCH_ARCH/x64/x86_64}
+ARCH_ARCH=${ARCH_ARCH/aarch64/aarch64}
+ARCH_ARCH=${ARCH_ARCH/armv7/armv7h}
+ARCH_MIRROR=
+if [ "${ARCH_ARCH}" = "x86_64" ]; then
+	#ARCH_MIRROR=http://ftp.lanet.kr/pub/archlinux
+	#ARCH_MIRROR=http://ftp.harukasan.org/archlinux
+	ARCH_MIRROR=http://mirror.anigil.com/archlinux
+elif [ "${ARCH_ARCH}" = "aarch64" ]; then
+	TARGET_QEMU=qemu-aarch64-static
+	#ARCH_MIRROR=http://ca.us.mirror.archlinuxarm.org
+	ARCH_MIRROR=http://tw.mirror.archlinuxarm.org
+elif [ "${ARCH_ARCH}" = "armv7h" ]; then
+	TARGET_QEMU=qemu-arm-static
+	#ARCH_MIRROR=http://ca.us.mirror.archlinuxarm.org
+	ARCH_MIRROR=http://tw.mirror.archlinuxarm.org
+fi
+
+/build/extras/arch-bootstrap.sh -a ${ARCH_ARCH} -r "${ARCH_MIRROR}" /build/archroot
+rm -rf ${TARGET_OUTPUT}/.BUILDINFO ${TARGET_OUTPUT}/.INSTALL ${TARGET_OUTPUT}/.MTREE ${TARGET_OUTPUT}/.PKGINFO
+echo "[$(TZ="GMT-9" date '+%Y-%m-%d %H:%M:%S')] ==> OK"
+echo
+
+echo "[$(TZ="GMT-9" date '+%Y-%m-%d %H:%M:%S')] ==> Setting basic configurations"
+#resolve
+cat <<- EOF > ${TARGET_OUTPUT}/etc/resolv.conf
+nameserver 1.1.1.1
+nameserver 1.0.0.1
+EOF
+
+#clear
+rm -rf ${TARGET_OUTPUT}/usr/local/bin/docker-*
+
+#qemu
+if [ ! -z "${TARGET_QEMU}" ]; then
+	cp -f extras/${TARGET_QEMU} "${TARGET_OUTPUT}/usr/bin/"
+	cp -f extras/${TARGET_QEMU} "${TARGET_OUTPUT}/usr/local/bin/"
+	chmod 4755 "${TARGET_OUTPUT}/usr/local/bin/${TARGET_QEMU}"
+	cat << EOF > ${TARGET_OUTPUT}/usr/local/bin/sudo
+#!/bin/sh
+
+qemu=/usr/local/bin/${TARGET_QEMU}
+sudo=/usr/bin/sudo
+
+if grep -q -w lm /proc/cpuinfo ; then
+		if [ "\$(basename "\${0}")" = "sudoedit" ]; then
+				\${qemu} -execve -0 /bin/sh \${sudo} -e "\${@}"
+		else
+				\${qemu} -execve -0 /bin/sh \${sudo} "\${@}"
+		fi
+else
+		if [ "\$(basename "\${0}")" = "sudoedit" ]; then
+				\${sudo} -e "\${@}"
+		else
+				\${sudo} "\${@}"
+		fi
+fi
+
+exit \$?
+EOF
+	chmod 4755 ${TARGET_OUTPUT}/usr/local/bin/sudo
+	ln -s sudo ${TARGET_OUTPUT}/usr/local/bin/sudoedit
+fi
+
+#docker-run
+cp extras/docker-run ${TARGET_OUTPUT}/usr/local/bin/docker-run
+
+#docker-install
+cp -f extras/docker-install.arch ${TARGET_OUTPUT}/usr/local/bin/docker-install
+rm -rf ${TARGET_OUTPUT}/usr/local/bin/docker-sysusers ${TARGET_OUTPUT}/usr/local/bin/docker-tmpfiles
+
+#docker-adduser
+cp -f extras/docker-adduser ${TARGET_OUTPUT}/usr/local/bin/docker-adduser
+
+#docker-chown
+cp -f extras/docker-chown ${TARGET_OUTPUT}/usr/local/bin/docker-chown
+
+#archlinux fix
+if [ -e "${TARGET_OUTPUT}/etc/arch-release" ]; then
+	if [ -e ${TARGET_OUTPUT}/usr/share/i18n/charmaps/UTF-8.gz ]; then
+		rm -rf ${TARGET_OUTPUT}/usr/share/i18n/charmaps/UTF-8
+		gzip -dk ${TARGET_OUTPUT}/usr/share/i18n/charmaps/UTF-8.gz
+	fi
+
+	if [ ! -z "$(find ${TARGET_OUTPUT}/usr/share/terminfo/ 2> /dev/null | grep '_ADMIN_')" ]; then
+		for t in ${TARGET_OUTPUT}/usr/share/terminfo/*_ADMIN_*
+		do
+			mv ${t} ${t/_ADMIN_*/}
+		done
+	fi
+fi
+
+#Workaound for Docker
+if [ "${BUILD_TAG}" = "x64" ]; then
+	patched_glibc=glibc-linux4-2.33-4-x86_64.pkg.tar.zst
+	wget --no-check-certificate -q -o ${TARGET_OUTPUT}/${patched_glibc} "https://repo.archlinuxcn.org/x86_64/${patched_glibc}"
+	bsdtar -C ${TARGET_OUTPUT}/ -xf "${patched_glibc}"
+	rm -rf "${TARGET_OUTPUT}/${patched_glibc}"
+	rm -rf ${TARGET_OUTPUT}/.BUILDINFO ${TARGET_OUTPUT}/.INSTALL ${TARGET_OUTPUT}/.MTREE ${TARGET_OUTPUT}/.PKGINFO
+fi
+
+#yay
+mkdir -p /build/yay
+cd /build/yay
+YAY_ADDR="https://github.com$(wget --no-check-certificate -q -O - https://github.com/Jguer/yay/releases | grep "/Jguer/yay/releases/download/.*/yay_.*_${ARCH_ARCH}.tar.gz" | head -1 | sed -e 's/^.*<a href="\([^"]*\)".*$/\1/g')"
+wget --no-check-certificate -q -O - ${YAY_ADDR} | tar zx
+cd yay_*
+mv yay ${TARGET_OUTPUT}/usr/local/bin/
+cd /
+
+#busybox
+busybox_url=
+if [ "${ARCH_ARCH}" = "x86_64" ]; then
+	busybox_url="https://mirror.xtom.com.hk/alpine/latest-stable/main/x86_64/$(wget --no-check-certificate https://mirror.xtom.com.hk/alpine/latest-stable/main/x86_64/ -q -O - | grep busybox-static | sed -e 's/^.*href="\([^"]*\)".*$/\1/g')"
+elif [ "${ARCH_ARCH}" = "aarch64" ]; then
+	busybox_url="https://mirror.xtom.com.hk/alpine/latest-stable/main/aarch64/$(wget --no-check-certificate https://mirror.xtom.com.hk/alpine/latest-stable/main/aarch64/ -q -O - | grep busybox-static | sed -e 's/^.*href="\([^"]*\)".*$/\1/g')"
+elif [ "${ARCH_ARCH}" = "armv7h" ]; then
+	busybox_url="https://mirror.xtom.com.hk/alpine/latest-stable/main/armv7/$(wget --no-check-certificate https://mirror.xtom.com.hk/alpine/latest-stable/main/armv7/ -q -O - | grep busybox-static | sed -e 's/^.*href="\([^"]*\)".*$/\1/g')"
+fi
+if [ ! -z "${busybox_url}" ]; then
+	mkdir -p ${TARGET_OUTPUT}/usr/local/busybox
+	wget --no-check-certificate "${busybox_url}" -q -O - | tar zxf - -C ${TARGET_OUTPUT}/usr/local/busybox/
+	mv ${TARGET_OUTPUT}/usr/local/busybox/bin/busybox.static ${TARGET_OUTPUT}/usr/local/busybox/busybox.static
+	chmod +s ${TARGET_OUTPUT}/usr/local/busybox/busybox.static
+	rm -rf ${TARGET_OUTPUT}/usr/local/busybox/bin ${TARGET_OUTPUT}/usr/local/busybox/.PKGINFO ${TARGET_OUTPUT}/usr/local/busybox/.SIGN.RSA*
+	for applet in $(${TARGET_OUTPUT}/usr/local/busybox/busybox.static --list)
+	do
+		ln -sf busybox.static ${TARGET_OUTPUT}/usr/local/busybox/${applet}
+	done
+	ln -sf busybox.static ${TARGET_OUTPUT}/usr/local/busybox/busybox
+	cat << EOF > ${TARGET_OUTPUT}/etc/profile.d/busybox.sh
+#!/bin/sh
+
+export PATH=\${PATH}:/usr/local/busybox
+EOF
+fi
+echo "[$(TZ="GMT-9" date '+%Y-%m-%d %H:%M:%S')] ==> OK"
+echo
+
+echo "[$(TZ="GMT-9" date '+%Y-%m-%d %H:%M:%S')] ==> Moving output"
+cd /
+mv ${TARGET_OUTPUT} /output
+rm -rf /build
+echo "[$(TZ="GMT-9" date '+%Y-%m-%d %H:%M:%S')] ==> OK"
+

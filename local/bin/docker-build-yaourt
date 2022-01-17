@@ -4,8 +4,10 @@ set -e
 
 echo "[$(TZ="GMT-9" date '+%Y-%m-%d %H:%M:%S')] ==> Installing required packages"
 PKG_LIB=""
-PKG_DEV="base-devel git"
-docker-install -r -u ${PKG_LIB} ${PKG_DEV}
+PKG_DEV="base-devel git sed"
+#docker-install -r -u ${PKG_LIB} ${PKG_DEV}
+pacman -Suy --noconfirm --overwrite "*" ${PKG_LIB} ${PKG_DEV} || true
+find /etc -name \*.pacnew -exec rm -rf {} \;
 echo "[$(TZ="GMT-9" date '+%Y-%m-%d %H:%M:%S')] ==> OK"
 echo
 
@@ -22,31 +24,18 @@ mkdir -p /build
 git clone https://aur.archlinux.org/package-query.git --depth 1
 cd package-query
 makepkg -si --noconfirm
-if [ "$(uname -m)" = "x86_64" ]; then
-	cp *.pkg.tar.zst /output/
-else
-	cp *.pkg.tar.xz /output/
-fi
+cp *.pkg.tar.* /output/
 cd ..
 
 git clone https://aur.archlinux.org/yaourt.git --depth 1
 cd yaourt
 makepkg -si --noconfirm
-if [ "$(uname -m)" = "x86_64" ]; then
-	cp *.pkg.tar.zst /output/
-else
-	cp *.pkg.tar.xz /output/
-fi
+cp *.pkg.tar.* /output/
 cd ..
 
 cd /
 rm -rf /build
 
-echo "[$(TZ="GMT-9" date '+%Y-%m-%d %H:%M:%S')] ==> OK"
-echo
-
-echo "[$(TZ="GMT-9" date '+%Y-%m-%d %H:%M:%S')] ==> Uninstalling unnecessary packages"
-docker-install -d -c ${PKG_DEV}
 echo "[$(TZ="GMT-9" date '+%Y-%m-%d %H:%M:%S')] ==> OK"
 echo
 
