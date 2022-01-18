@@ -3,8 +3,8 @@
 ![Docker Stars](https://img.shields.io/docker/stars/forumi0721/arch-base)
 
 ### x64
-![Docker Image Version](https://img.shields.io/docker/v/forumi0721/arch-base/latest)
-![Docker Image Size](https://img.shields.io/docker/image-size/forumi0721/arch-base/latest)
+![Docker Image Version](https://img.shields.io/docker/v/forumi0721/arch-base/x64)
+![Docker Image Size](https://img.shields.io/docker/image-size/forumi0721/arch-base/x64)
 ### aarch64
 ![Docker Image Version](https://img.shields.io/docker/v/forumi0721/arch-base/aarch64)
 ![Docker Image Size](https://img.shields.io/docker/image-size/forumi0721/arch-base/aarch64)
@@ -37,7 +37,7 @@ docker run -i -t --rm \
 #### Usage
 
 ```dockerfile
-FROM forumi0721/arch-[ARCH]-base:latest
+FROM forumi0721/arch-base:[ARCH_TAG]
 
 RUN 'build-code'
 ```
