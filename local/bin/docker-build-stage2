@@ -80,14 +80,16 @@ if [ -e /output ]; then
 	if [ ! -z "${package_query_file}" -a ! -z "${yaourt_file}" ]; then
 		/usr/bin/pacman -Sy --noconfirm ; /usr/bin/pacman -U --noconfirm --asdeps ${package_query_file} ; /usr/bin/pacman -U --noconfirm ${yaourt_file}
 	fi
+	cd /
+	rm -rf /output
 fi
-rm -rf /output
 
 #makepkg
 [ -e /usr/bin/makepkg ] && sed -i -e 's/(( EUID == 0 ))/false /g' /usr/bin/makepkg
 
 pacman -Rsn --noconfirm ${PACMAN_REMOVE_PKGS} || true
-cd /
+#echo -e "Y\nY" | pacman -Scc &> /dev/null
+docker-install -d -c
 echo "[$(TZ="GMT-9" date '+%Y-%m-%d %H:%M:%S')] ==> OK"
 echo
 
