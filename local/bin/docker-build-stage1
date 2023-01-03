@@ -37,15 +37,18 @@ ARCH_MIRROR=
 if [ "${ARCH_ARCH}" = "x86_64" ]; then
 	#ARCH_MIRROR=http://ftp.lanet.kr/pub/archlinux
 	#ARCH_MIRROR=http://ftp.harukasan.org/archlinux
-	ARCH_MIRROR=http://mirror.anigil.com/archlinux
+	#ARCH_MIRROR=http://mirror.anigil.com/archlinux
+	ARCH_MIRROR=http://mirror.premi.st/archlinux
 elif [ "${ARCH_ARCH}" = "aarch64" ]; then
 	TARGET_QEMU=qemu-aarch64-static
 	#ARCH_MIRROR=http://ca.us.mirror.archlinuxarm.org
-	ARCH_MIRROR=http://tw.mirror.archlinuxarm.org
+	#ARCH_MIRROR=http://tw.mirror.archlinuxarm.org
+	ARCH_MIRROR=http://mirror.premi.st/archlinux-arm
 elif [ "${ARCH_ARCH}" = "armv7h" ]; then
 	TARGET_QEMU=qemu-arm-static
 	#ARCH_MIRROR=http://ca.us.mirror.archlinuxarm.org
-	ARCH_MIRROR=http://tw.mirror.archlinuxarm.org
+	#ARCH_MIRROR=http://tw.mirror.archlinuxarm.org
+	ARCH_MIRROR=http://mirror.premi.st/archlinux-arm
 fi
 
 /build/extras/arch-bootstrap.sh -a ${ARCH_ARCH} -r "${ARCH_MIRROR}" /build/archroot
