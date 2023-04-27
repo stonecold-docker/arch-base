@@ -11,7 +11,7 @@ find /etc -name \*.pacnew -exec rm -rf {} \;
 echo "[$(TZ="GMT-9" date '+%Y-%m-%d %H:%M:%S')] ==> OK"
 echo
 
-echo "[$(TZ="GMT-9" date '+%Y-%m-%d %H:%M:%S')] ==> Building yaourt"
+echo "[$(TZ="GMT-9" date '+%Y-%m-%d %H:%M:%S')] ==> Building yay"
 
 sed -i -e 's/(( EUID == 0 ))/false /g' /usr/bin/makepkg
 
@@ -21,14 +21,8 @@ mkdir -p /output
 rm -rf /build
 mkdir -p /build
 
-git clone https://aur.archlinux.org/package-query.git --depth 1
-cd package-query
-makepkg -si --noconfirm
-cp *.pkg.tar.* /output/
-cd ..
-
-git clone https://aur.archlinux.org/yaourt.git --depth 1
-cd yaourt
+git clone https://aur.archlinux.org/yay.git --depth 1
+cd yay
 makepkg -si --noconfirm
 cp *.pkg.tar.* /output/
 cd ..

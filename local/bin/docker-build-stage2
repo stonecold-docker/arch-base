@@ -11,7 +11,7 @@ ARCH_ARCH=${ARCH_ARCH/x64/x86_64}
 ARCH_ARCH=${ARCH_ARCH/aarch64/aarch64}
 ARCH_ARCH=${ARCH_ARCH/armv7/armv7h}
 #PACMAN_BASE_PKGS="bash coreutils diffutils filesystem findutils gettext glibc grep gzip less pacman procps-ng sed systemd haveged"
-PACMAN_BASE_PKGS="bash coreutils diffutils filesystem findutils gettext grep gzip less pacman procps-ng sed systemd haveged gawk"
+PACMAN_BASE_PKGS="bash coreutils diffutils filesystem findutils gettext grep gzip less pacman procps-ng sed systemd haveged gawk archlinux-keyring"
 PACMAN_REMOVE_PKGS="gzip less procps-ng haveged"
 pacman -Suy --noconfirm --overwrite "*" ${PACMAN_BASE_PKGS} ${PACMAN_REMOVE_PKGS}  || true
 find /etc -name \*.pacnew -exec rm -rf {} \;
@@ -72,13 +72,12 @@ fi
 #skel
 cp -ar ${TARGET_OUTPUT}/etc/skel/. ${TARGET_OUTPUT}/root/
 
-##yaourt
+##yay
 if [ -e /output ]; then
 	cd /output
-	package_query_file="$(ls package-query-*.pkg.tar.*)"
-	yaourt_file="$(ls yaourt-*.pkg.tar.*)"
-	if [ ! -z "${package_query_file}" -a ! -z "${yaourt_file}" ]; then
-		/usr/bin/pacman -Sy --noconfirm ; /usr/bin/pacman -U --noconfirm --asdeps ${package_query_file} ; /usr/bin/pacman -U --noconfirm ${yaourt_file}
+	yay_file="$(ls yay-*.pkg.tar.*)"
+	if [ ! -z "${yay_file}" ]; then
+		/usr/bin/pacman -Sy --noconfirm ; /usr/bin/pacman -U --noconfirm ${yay_file}
 	fi
 	cd /
 	rm -rf /output

@@ -12,7 +12,7 @@ RUN ["docker-build-stage1"]
 
 
 
-FROM forumi0721/scratch:armv7 as builder_yaourt
+FROM forumi0721/scratch:armv7 as builder_yay
 
 LABEL maintainer="forumi0721@gmail.com"
 
@@ -20,9 +20,9 @@ ARG BUILD_TAG=armv7
 
 COPY --from=builder_stage1 /output /
 
-COPY local/bin/docker-build-yaourt /usr/local/bin/
+COPY local/bin/docker-build-yay /usr/local/bin/
 
-RUN ["docker-build-yaourt"]
+RUN ["docker-build-yay"]
 
 
 
@@ -34,7 +34,7 @@ ARG BUILD_TAG=armv7
 
 COPY --from=builder_stage1 /output /
 
-COPY --from=builder_yaourt /output /output
+COPY --from=builder_yay /output /output
 
 COPY local/bin/docker-build-stage2 /usr/local/bin/
 
