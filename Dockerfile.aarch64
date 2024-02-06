@@ -12,17 +12,17 @@ RUN ["docker-build-stage1"]
 
 
 
-FROM forumi0721/scratch:aarch64 as builder_yay
-
-LABEL maintainer="forumi0721@gmail.com"
-
-ARG BUILD_TAG=aarch64
-
-COPY --from=builder_stage1 /output /
-
-COPY local/bin/docker-build-yay /usr/local/bin/
-
-RUN ["docker-build-yay"]
+#FROM forumi0721/scratch:aarch64 as builder_yay
+#
+#LABEL maintainer="forumi0721@gmail.com"
+#
+#ARG BUILD_TAG=aarch64
+#
+#COPY --from=builder_stage1 /output /
+#
+#COPY local/bin/docker-build-yay /usr/local/bin/
+#
+#RUN ["docker-build-yay"]
 
 
 
@@ -34,7 +34,7 @@ ARG BUILD_TAG=aarch64
 
 COPY --from=builder_stage1 /output /
 
-COPY --from=builder_yay /output /output
+#COPY --from=builder_yay /output /output
 
 COPY local/bin/docker-build-stage2 /usr/local/bin/
 
