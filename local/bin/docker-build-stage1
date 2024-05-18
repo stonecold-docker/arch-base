@@ -35,13 +35,13 @@ ARCH_ARCH=${ARCH_ARCH/aarch64/aarch64}
 ARCH_ARCH=${ARCH_ARCH/armv7/armv7h}
 ARCH_MIRROR=
 if [ "${ARCH_ARCH}" = "x86_64" ]; then
-	ARCH_MIRROR=https://seoul.mirror.pkgbuild.com
+	ARCH_MIRROR=http://seoul.mirror.pkgbuild.com
 elif [ "${ARCH_ARCH}" = "aarch64" ]; then
 	TARGET_QEMU=qemu-aarch64-static
-	ARCH_MIRROR=https://ca.us.mirror.archlinuxarm.org
+	ARCH_MIRROR=http://ca.us.mirror.archlinuxarm.org
 elif [ "${ARCH_ARCH}" = "armv7h" ]; then
 	TARGET_QEMU=qemu-arm-static
-	ARCH_MIRROR=https://ca.us.mirror.archlinuxarm.org
+	ARCH_MIRROR=http://ca.us.mirror.archlinuxarm.org
 fi
 
 /build/extras/arch-bootstrap.sh -a ${ARCH_ARCH} -r "${ARCH_MIRROR}" /build/archroot
