@@ -15,6 +15,11 @@ PACMAN_BASE_PKGS="bash coreutils diffutils filesystem findutils gettext grep gzi
 PACMAN_REMOVE_PKGS="gzip less procps-ng haveged"
 pacman -Suy --noconfirm --overwrite "*" ${PACMAN_BASE_PKGS} ${PACMAN_REMOVE_PKGS}  || true
 find /etc -name \*.pacnew -exec rm -rf {} \;
+if [ "${ARCH_ARCH}" = "x86_64" ]; then
+	pacman -U --noconfirm --overwrite "*" https://archive.archlinux.org/packages/f/fakeroot/fakeroot-1.34-1-x86_64.pkg.tar.zst
+	sed -i -e 's/^#\?\(IgnorePkg.*=.*\)$/\1 fakeroot/g' /etc/pacman.conf
+
+fi
 
 passwd -d root
 
