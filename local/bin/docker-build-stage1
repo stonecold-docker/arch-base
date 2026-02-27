@@ -144,32 +144,6 @@ cd yay_*
 mv yay ${TARGET_OUTPUT}/usr/local/bin/
 cd /
 
-#busybox
-busybox_url=
-if [ "${ARCH_ARCH}" = "x86_64" ]; then
-	busybox_url="https://mirror.xtom.com.hk/alpine/latest-stable/main/x86_64/$(wget --no-check-certificate https://mirror.xtom.com.hk/alpine/latest-stable/main/x86_64/ -q -O - | grep busybox-static | sed -e 's/^.*href="\([^"]*\)".*$/\1/g')"
-elif [ "${ARCH_ARCH}" = "aarch64" ]; then
-	busybox_url="https://mirror.xtom.com.hk/alpine/latest-stable/main/aarch64/$(wget --no-check-certificate https://mirror.xtom.com.hk/alpine/latest-stable/main/aarch64/ -q -O - | grep busybox-static | sed -e 's/^.*href="\([^"]*\)".*$/\1/g')"
-elif [ "${ARCH_ARCH}" = "armv7h" ]; then
-	busybox_url="https://mirror.xtom.com.hk/alpine/latest-stable/main/armv7/$(wget --no-check-certificate https://mirror.xtom.com.hk/alpine/latest-stable/main/armv7/ -q -O - | grep busybox-static | sed -e 's/^.*href="\([^"]*\)".*$/\1/g')"
-fi
-if [ ! -z "${busybox_url}" ]; then
-	mkdir -p ${TARGET_OUTPUT}/usr/local/busybox
-	wget --no-check-certificate "${busybox_url}" -q -O - | tar zxf - -C ${TARGET_OUTPUT}/usr/local/busybox/
-	mv ${TARGET_OUTPUT}/usr/local/busybox/bin/busybox.static ${TARGET_OUTPUT}/usr/local/busybox/busybox.static
-	chmod +s ${TARGET_OUTPUT}/usr/local/busybox/busybox.static
-	rm -rf ${TARGET_OUTPUT}/usr/local/busybox/bin ${TARGET_OUTPUT}/usr/local/busybox/.PKGINFO ${TARGET_OUTPUT}/usr/local/busybox/.SIGN.RSA*
-	for applet in $(${TARGET_OUTPUT}/usr/local/busybox/busybox.static --list)
-	do
-		ln -sf busybox.static ${TARGET_OUTPUT}/usr/local/busybox/${applet}
-	done
-	ln -sf busybox.static ${TARGET_OUTPUT}/usr/local/busybox/busybox
-	cat << EOF > ${TARGET_OUTPUT}/etc/profile.d/busybox.sh
-#!/bin/sh
-
-export PATH=\${PATH}:/usr/local/busybox
-EOF
-fi
 echo "[$(TZ="GMT-9" date '+%Y-%m-%d %H:%M:%S')] ==> OK"
 echo
 
