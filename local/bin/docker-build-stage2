@@ -97,3 +97,5 @@ docker-install -d -c
 echo "[$(TZ="GMT-9" date '+%Y-%m-%d %H:%M:%S')] ==> OK"
 echo
 
+exit 0
+
