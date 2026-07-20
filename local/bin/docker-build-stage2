@@ -2,6 +2,7 @@
 
 set -e
 
+set +e
 echo "[$(TZ="GMT-9" date '+%Y-%m-%d %H:%M:%S')] ==> Executing stage2"
 TARGET_OUTPUT=/
 TARGET_LOCALE=${TARGET_LOCALE:-ko_KR.UTF-8}
@@ -49,9 +50,7 @@ fi
 update-ca-trust
 
 #keyring
-set +e
 /usr/bin/haveged ; /usr/bin/rm -fr /etc/pacman.d/gnupg ; /usr/bin/pacman-key --init ; /usr/bin/pacman-key --populate ${ARCH_KEYRING}
-set -e
 
 #basic config
 #echo "${PACMAN_MIRRORLIST}" > ${TARGET_OUTPUT}/etc/pacman.d/mirrorlist
@@ -96,6 +95,7 @@ pacman -Rsn --noconfirm ${PACMAN_REMOVE_PKGS} || true
 docker-install -d -c
 echo "[$(TZ="GMT-9" date '+%Y-%m-%d %H:%M:%S')] ==> OK"
 echo
+set -e
 
 exit 0
 
