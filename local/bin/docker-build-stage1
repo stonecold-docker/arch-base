@@ -9,50 +9,23 @@ docker-install -r -u ${PKG_LIB} ${PKG_DEV}
 echo "[$(TZ="GMT-9" date '+%Y-%m-%d %H:%M:%S')] ==> OK"
 echo
 
-echo "[$(TZ="GMT-9" date '+%Y-%m-%d %H:%M:%S')] ==> Downloading bootstrap"
-mkdir -p /build
-cd /build
-git clone https://forumi0721@bitbucket.org/forumi0721/docker-dist-extras.git extras --depth=1
-if [ "$(uname -m)" = "x86_64" -a "${BUILD_TAG}" = "aarch64" ]; then
-	cp extras/qemu-aarch64-static /usr/bin
-	chmod +x /usr/bin/qemu-aarch64-static
-elif [ "$(uname -m)" = "x86_64" -a "${BUILD_TAG}" = "armv7" ]; then
-	cp extras/qemu-arm-static /usr/bin
-	chmod +x /usr/bin/qemu-arm-static
-fi
-cd /
-echo "[$(TZ="GMT-9" date '+%Y-%m-%d %H:%M:%S')] ==> OK"
-echo
-
 echo "[$(TZ="GMT-9" date '+%Y-%m-%d %H:%M:%S')] ==> Executing bootstrap"
-TARGET_OUTPUT=/build/archroot
-TARGET_QEMU=
+TARGET_OUTPUT=/output
 mkdir -p ${TARGET_OUTPUT}
-cd /build
-BUILD_TAG=${BUILD_TAG:-x86_64}
-ARCH_ARCH=${BUILD_TAG}
-ARCH_ARCH=${ARCH_ARCH/x64/x86_64}
-ARCH_ARCH=${ARCH_ARCH/aarch64/aarch64}
-ARCH_ARCH=${ARCH_ARCH/armv7/armv7h}
+TARGET_ARCH=$(uname -m)
 ARCH_MIRROR=
-if [ "${ARCH_ARCH}" = "x86_64" ]; then
-	ARCH_MIRROR=https://ftp.lanet.kr/pub/archlinux
-elif [ "${ARCH_ARCH}" = "aarch64" ]; then
-	TARGET_QEMU=qemu-aarch64-static
-	ARCH_MIRROR=http://ca.us.mirror.archlinuxarm.org
-elif [ "${ARCH_ARCH}" = "armv7h" ]; then
-	TARGET_QEMU=qemu-arm-static
-	ARCH_MIRROR=http://ca.us.mirror.archlinuxarm.org
+if [ "${TARGET_ARCH}" = "x86_64" ]; then
+	ARCH_MIRROR=https://http.krfoss.org/archlinux
+elif [ "${TARGET_ARCH}" = "aarch64" ]; then
+	ARCH_MIRROR=https://http.krfoss.org/archlinuxarm
 fi
 
-#/build/extras/arch-bootstrap.sh -a ${ARCH_ARCH} -r "${ARCH_MIRROR}" /build/archroot
-if [ -z "${TARGET_QEMU}" ]; then
-	/build/extras/arch-bootstrap.sh -a ${ARCH_ARCH} /build/archroot
-else
-	/build/extras/arch-bootstrap.sh -a ${ARCH_ARCH} -q /build/archroot
-fi
-rm -rf ${TARGET_OUTPUT}/.BUILDINFO ${TARGET_OUTPUT}/.INSTALL ${TARGET_OUTPUT}/.MTREE ${TARGET_OUTPUT}/.PKGINFO
-echo "Server = ${ARCH_MIRROR}/\$repo/os/\$arch" > ${TARGET_OUTPUT}/etc/pacman.d/mirror
+mkdir -p ${TARGET_OUTPUT}/dev
+touch "${TARGET_OUTPUT}/dev/null"
+touch "${TARGET_OUTPUT}/dev/random"
+touch "${TARGET_OUTPUT}/dev/urandom"
+/usr/local/bin/arch-bootstrap.sh -a ${TARGET_ARCH} ${TARGET_OUTPUT}
+echo "Server = ${ARCH_MIRROR}/\$repo/os/\$arch" > ${TARGET_OUTPUT}/etc/pacman.d/mirrorlist
 echo "[$(TZ="GMT-9" date '+%Y-%m-%d %H:%M:%S')] ==> OK"
 echo
 
@@ -63,52 +36,11 @@ nameserver 1.1.1.1
 nameserver 1.0.0.1
 EOF
 
-#clear
+#docker scripts
 rm -rf ${TARGET_OUTPUT}/usr/local/bin/docker-*
-
-#qemu
-if [ ! -z "${TARGET_QEMU}" ]; then
-	cp -f extras/${TARGET_QEMU} "${TARGET_OUTPUT}/usr/bin/"
-	cp -f extras/${TARGET_QEMU} "${TARGET_OUTPUT}/usr/local/bin/"
-	chmod 4755 "${TARGET_OUTPUT}/usr/local/bin/${TARGET_QEMU}"
-	cat << EOF > ${TARGET_OUTPUT}/usr/local/bin/sudo
-#!/bin/sh
-
-qemu=/usr/local/bin/${TARGET_QEMU}
-sudo=/usr/bin/sudo
-
-if grep -q -w lm /proc/cpuinfo ; then
-		if [ "\$(basename "\${0}")" = "sudoedit" ]; then
-				\${qemu} -execve -0 /bin/sh \${sudo} -e "\${@}"
-		else
-				\${qemu} -execve -0 /bin/sh \${sudo} "\${@}"
-		fi
-else
-		if [ "\$(basename "\${0}")" = "sudoedit" ]; then
-				\${sudo} -e "\${@}"
-		else
-				\${sudo} "\${@}"
-		fi
-fi
-
-exit \$?
-EOF
-	chmod 4755 ${TARGET_OUTPUT}/usr/local/bin/sudo
-	ln -s sudo ${TARGET_OUTPUT}/usr/local/bin/sudoedit
-fi
-
-#docker-run
-cp extras/docker-run ${TARGET_OUTPUT}/usr/local/bin/docker-run
-
-#docker-install
-cp -f extras/docker-install.arch ${TARGET_OUTPUT}/usr/local/bin/docker-install
-rm -rf ${TARGET_OUTPUT}/usr/local/bin/docker-sysusers ${TARGET_OUTPUT}/usr/local/bin/docker-tmpfiles
-
-#docker-adduser
-cp -f extras/docker-adduser ${TARGET_OUTPUT}/usr/local/bin/docker-adduser
-
-#docker-chown
-cp -f extras/docker-chown ${TARGET_OUTPUT}/usr/local/bin/docker-chown
+cp /usr/local/bin/docker-install.arch ${TARGET_OUTPUT}/usr/local/bin/docker-install
+cp /usr/local/bin/docker-run ${TARGET_OUTPUT}/usr/local/bin/
+cp /usr/local/bin/docker-chown ${TARGET_OUTPUT}/usr/local/bin/
 
 #archlinux fix
 if [ -e "${TARGET_OUTPUT}/etc/arch-release" ]; then
@@ -125,31 +57,26 @@ if [ -e "${TARGET_OUTPUT}/etc/arch-release" ]; then
 	fi
 fi
 
-##Workaound for Docker
-#if [ "${BUILD_TAG}" = "x64" ]; then
-#	patched_glibc=glibc-linux4-2.33-5-x86_64.pkg.tar.zst
-#	wget --no-check-certificate -q -o ${TARGET_OUTPUT}/${patched_glibc} "https://repo.archlinuxcn.org/x86_64/${patched_glibc}"
-#	bsdtar -C ${TARGET_OUTPUT}/ -xf "${patched_glibc}"
-#	rm -rf "${TARGET_OUTPUT}/${patched_glibc}"
-#	rm -rf ${TARGET_OUTPUT}/.BUILDINFO ${TARGET_OUTPUT}/.INSTALL ${TARGET_OUTPUT}/.MTREE ${TARGET_OUTPUT}/.PKGINFO
-#fi
+#pacman
+sed -i -e "s/\(Architecture =\) auto/\1 ${TARGET_ARCH}/g" ${TARGET_OUTPUT}/etc/pacman.conf
+sed -i -e "s/^#\(NoUpgrade   =\)/\1 \/etc\/pacman.d\/mirrorlist/g" ${TARGET_OUTPUT}/etc/pacman.conf
+sed -i -e 's/^#Color/Color/g' -e 's/^#DisableSandbox/DisableSandbox/g' ${TARGET_OUTPUT}/etc/pacman.conf
+sed -i -e '/^#\[multilib\]$/,/^#Include = \/etc\/pacman.d\/mirrorlist$/s/^#//' ${TARGET_OUTPUT}/etc/pacman.conf
 
 #yay
 mkdir -p /build/yay
 cd /build/yay
 YAY_VERSION="$(wget --no-check-certificate -q -O - https://github.com/Jguer/yay/releases | grep "/Jguer/yay/tree/.*" | head -1 | sed -e 's@^.*"/Jguer/yay/tree/v\([^"]*\)".*$@\1@g')"
-YAY_ADDR="https://github.com/Jguer/yay/releases/download/v${YAY_VERSION}/yay_${YAY_VERSION}_${ARCH_ARCH}.tar.gz"
+YAY_ADDR="https://github.com/Jguer/yay/releases/download/v${YAY_VERSION}/yay_${YAY_VERSION}_${TARGET_ARCH}.tar.gz"
 wget --no-check-certificate -q -O - ${YAY_ADDR} | tar zx
 cd yay_*
 mv yay ${TARGET_OUTPUT}/usr/local/bin/
 cd /
+rm -rf /build
+
+#clear
+rm -rf ${TARGET_OUTPUT}/.BUILDINFO ${TARGET_OUTPUT}/.INSTALL ${TARGET_OUTPUT}/.MTREE ${TARGET_OUTPUT}/.PKGINFO
 
 echo "[$(TZ="GMT-9" date '+%Y-%m-%d %H:%M:%S')] ==> OK"
 echo
-
-echo "[$(TZ="GMT-9" date '+%Y-%m-%d %H:%M:%S')] ==> Moving output"
-cd /
-mv ${TARGET_OUTPUT} /output
-rm -rf /build
-echo "[$(TZ="GMT-9" date '+%Y-%m-%d %H:%M:%S')] ==> OK"
 

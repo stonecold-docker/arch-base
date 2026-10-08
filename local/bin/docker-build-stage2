@@ -4,45 +4,48 @@ set -e
 
 set +e
 echo "[$(TZ="GMT-9" date '+%Y-%m-%d %H:%M:%S')] ==> Executing stage2"
-TARGET_OUTPUT=/
 TARGET_LOCALE=${TARGET_LOCALE:-ko_KR.UTF-8}
-TARGET_TIMEZONE=${TARGET_TIMEZONE:-Asia/Seoul}
-ARCH_ARCH=${BUILD_TAG}
-ARCH_ARCH=${ARCH_ARCH/x64/x86_64}
-ARCH_ARCH=${ARCH_ARCH/aarch64/aarch64}
-ARCH_ARCH=${ARCH_ARCH/armv7/armv7h}
-#PACMAN_BASE_PKGS="bash coreutils diffutils filesystem findutils gettext glibc grep gzip less pacman procps-ng sed systemd haveged"
-PACMAN_BASE_PKGS="bash coreutils diffutils filesystem findutils gettext grep gzip less pacman procps-ng sed systemd haveged gawk archlinux-keyring"
-PACMAN_REMOVE_PKGS="gzip less procps-ng haveged"
-pacman -Suy --noconfirm --overwrite "*" ${PACMAN_BASE_PKGS} ${PACMAN_REMOVE_PKGS}  || true
+TIMEZONE=${TIMEZONE:-Asia/Seoul}
+TARGET_ARCH=$(uname -m)
+PACMAN_BASE_PKGS="bash coreutils diffutils filesystem findutils gettext grep gzip less pacman procps-ng sed systemd sudo haveged gawk archlinux-keyring"
+PACMAN_REMOVE_PKGS="procps-ng haveged"
+pacman -Suy --noconfirm --overwrite "*" ${PACMAN_BASE_PKGS} ${PACMAN_REMOVE_PKGS} || true
 find /etc -name \*.pacnew -exec rm -rf {} \;
-#if [ "${ARCH_ARCH}" = "x86_64" ]; then
-#	pacman -U --noconfirm --overwrite "*" https://archive.archlinux.org/packages/f/fakeroot/fakeroot-1.34-1-x86_64.pkg.tar.zst
-#	sed -i -e 's/^#\?\(IgnorePkg.*=.*\)$/\1 fakeroot/g' /etc/pacman.conf
-#
-#fi
 
+#cachyos
+if [ "${TARGET_ARCH}" = "x86_64" ]; then
+	pacman-key --recv-keys F3B607488DB35A47 --keyserver keyserver.ubuntu.com
+	pacman-key --lsign-key F3B607488DB35A47
+	pacman --noconfirm -U 'https://mirror.cachyos.org/repo/x86_64/cachyos/cachyos-keyring-20240331-1-any.pkg.tar.zst' \
+	'https://mirror.cachyos.org/repo/x86_64/cachyos/cachyos-mirrorlist-27-1-any.pkg.tar.zst' \
+	'https://mirror.cachyos.org/repo/x86_64/cachyos/pacman-7.1.0.r9.g54d9411-4-x86_64.pkg.tar.zst'
+	sed -i '/^\[core\]$/i [cachyos]\nInclude = /etc/pacman.d/cachyos-mirrorlist\n' /etc/pacman.conf
+	pacman -Suy --noconfirm
+
+	if [ -e /etc/pacman.conf.pacnew ]; then
+		mv /etc/pacman.conf.pacnew /etc/pacman.conf
+		sed -i -e "s/\(Architecture =\) auto/\1 ${TARGET_ARCH}/g" /etc/pacman.conf
+		sed -i -e "s/^#\(NoUpgrade   =\)/\1 \/etc\/pacman.d\/mirrorlist/g" /etc/pacman.conf
+		sed -i -e 's/^#Color/Color/g' -e 's/^#DisableSandbox/DisableSandbox/g' /etc/pacman.conf
+		sed -i -e '/^#\[multilib\]$/,/^#Include = \/etc\/pacman.d\/mirrorlist$/s/^#//' /etc/pacman.conf
+		sed -i '/^\[core\]$/i [cachyos]\nInclude = /etc/pacman.d/cachyos-mirrorlist\n' /etc/pacman.conf
+	fi
+fi
+
+#password
 passwd -d root
 
-#if [ "${ARCH_ARCH}" = "x86_64" ]; then
-#	patched_glibc=glibc-linux4-2.33-5-x86_64.pkg.tar.zst
-#	curl -o ${TARGET_OUTPUT}/${patched_glibc} "https://repo.archlinuxcn.org/x86_64/${patched_glibc}"
-#	bsdtar -C ${TARGET_OUTPUT}/ -xf "${patched_glibc}"
-#	rm -rf "${TARGET_OUTPUT}/${patched_glibc}"
-#	rm -rf ${TARGET_OUTPUT}/.BUILDINFO ${TARGET_OUTPUT}/.INSTALL ${TARGET_OUTPUT}/.MTREE ${TARGET_OUTPUT}/.PKGINFO
-#fi
-
 #users gid
-sed -i -e "s/^users:x:.*$/users:x:100:/g" ${TARGET_OUTPUT}/etc/group
+sed -i -e "s/^users:x:.*$/users:x:100:/g" /etc/group
 
 ##resolve
-#cat <<- EOF > ${TARGET_OUTPUT}/etc/resolv.conf
+#cat <<- EOF > /etc/resolv.conf
 #nameserver 1.1.1.1
 #nameserver 1.0.0.1
 #EOF
 
 #systemd-sysusers
-if [ -e "${TARGET_OUTPUT}/usr/bin/systemd-sysusers" ]; then
+if [ -e "/usr/bin/systemd-sysusers" ]; then
 	/usr/bin/systemd-sysusers
 fi
 
@@ -53,39 +56,20 @@ update-ca-trust
 /usr/bin/haveged ; /usr/bin/rm -fr /etc/pacman.d/gnupg ; /usr/bin/pacman-key --init ; /usr/bin/pacman-key --populate ${ARCH_KEYRING}
 
 #basic config
-#echo "${PACMAN_MIRRORLIST}" > ${TARGET_OUTPUT}/etc/pacman.d/mirrorlist
-sed -i -e "s/\(Architecture =\) auto/\1 ${ARCH_ARCH}/g" ${TARGET_OUTPUT}/etc/pacman.conf
-sed -i -e "s/#\(NoUpgrade   =\)/\1 \/etc\/pacman.d\/mirrorlist/g" ${TARGET_OUTPUT}/etc/pacman.conf
-
-#locale
-#if [ -e ${TARGET_OUTPUT}/usr/share/i18n/charmaps/UTF-8.gz ]; then
-#	rm -rf ${TARGET_OUTPUT}/usr/share/i18n/charmaps/UTF-8
-#	gzip -dk ${TARGET_OUTPUT}/usr/share/i18n/charmaps/UTF-8.gz
-#fi
-sed -i -e "s/#*[ ]*${TARGET_LOCALE}/${TARGET_LOCALE}/g" ${TARGET_OUTPUT}/etc/locale.gen
-echo "LANG=${TARGET_LOCALE}" >> ${TARGET_OUTPUT}/etc/locale.conf
-echo "LC_ALL=${TARGET_LOCALE}" >> ${TARGET_OUTPUT}/etc/locale.conf
+sed -i -e "s/#*[ ]*${TARGET_LOCALE}/${TARGET_LOCALE}/g" /etc/locale.gen
+sed -i -e "s/#*[ ]*en_US.UTF-8/en_US.UTF-8/g" /etc/locale.gen
+echo "LANG=${TARGET_LOCALE}" >> /etc/locale.conf
+echo "LC_ALL=${TARGET_LOCALE}" >> /etc/locale.conf
 locale-gen
 
 #timezone
-if [ -e "${TARGET_OUTPUT}/usr/share/zoneinfo/${TARGET_TIMEZONE}" ]; then
-	rm -rf ${TARGET_OUTPUT}/etc/localtime
-	ln -sf /usr/share/zoneinfo/${TARGET_TIMEZONE} ${TARGET_OUTPUT}/etc/localtime
+if [ -e "/usr/share/zoneinfo/${TIMEZONE}" ]; then
+	rm -rf /etc/localtime
+	ln -sf /usr/share/zoneinfo/${TIMEZONE} /etc/localtime
 fi
 
 #skel
-cp -ar ${TARGET_OUTPUT}/etc/skel/. ${TARGET_OUTPUT}/root/
-
-#yay
-if [ -e /output ]; then
-	cd /output
-	yay_file="$(ls yay-*.pkg.tar.*)"
-	if [ ! -z "${yay_file}" ]; then
-		/usr/bin/pacman -Sy --noconfirm ; /usr/bin/pacman -U --noconfirm ${yay_file}
-	fi
-	cd /
-	rm -rf /output
-fi
+cp -ar /etc/skel/. /root/
 
 #makepkg
 [ -e /usr/bin/makepkg ] && sed -i -e 's/(( EUID == 0 ))/false /g' /usr/bin/makepkg
