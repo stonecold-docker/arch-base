@@ -36,11 +36,13 @@ nameserver 1.1.1.1
 nameserver 1.0.0.1
 EOF
 
-#docker scripts
+#scripts
 rm -rf ${TARGET_OUTPUT}/usr/local/bin/docker-*
 cp /usr/local/bin/docker-install.arch ${TARGET_OUTPUT}/usr/local/bin/docker-install
-cp /usr/local/bin/docker-run ${TARGET_OUTPUT}/usr/local/bin/
+cp /usr/local/bin/docker-adduser ${TARGET_OUTPUT}/usr/local/bin/
 cp /usr/local/bin/docker-chown ${TARGET_OUTPUT}/usr/local/bin/
+cp /usr/local/bin/docker-run ${TARGET_OUTPUT}/usr/local/bin/
+
 
 #archlinux fix
 if [ -e "${TARGET_OUTPUT}/etc/arch-release" ]; then
