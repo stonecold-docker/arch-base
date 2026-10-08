@@ -1,11 +1,10 @@
 #!/bin/sh
 
-set -e
-
 set +e
+
 echo "[$(TZ="GMT-9" date '+%Y-%m-%d %H:%M:%S')] ==> Executing stage2"
 TARGET_LOCALE=${TARGET_LOCALE:-ko_KR.UTF-8}
-TIMEZONE=${TIMEZONE:-Asia/Seoul}
+TARGET_TIMEZONE=${TARGET_TIMEZONE:-${TIMEZONE:-Asia/Seoul}}
 TARGET_ARCH=$(uname -m)
 PACMAN_BASE_PKGS="bash coreutils diffutils filesystem findutils gettext grep gzip less pacman procps-ng sed systemd sudo haveged gawk archlinux-keyring"
 PACMAN_REMOVE_PKGS="procps-ng haveged"
@@ -57,9 +56,9 @@ echo "LC_ALL=${TARGET_LOCALE}" >> /etc/locale.conf
 locale-gen
 
 #timezone
-if [ -e "/usr/share/zoneinfo/${TIMEZONE}" ]; then
+if [ -e "/usr/share/zoneinfo/${TARGET_TIMEZONE}" ]; then
 	rm -rf /etc/localtime
-	ln -sf /usr/share/zoneinfo/${TIMEZONE} /etc/localtime
+	ln -sf /usr/share/zoneinfo/${TARGET_TIMEZONE} /etc/localtime
 fi
 
 #skel
@@ -73,6 +72,9 @@ pacman -Rsn --noconfirm ${PACMAN_REMOVE_PKGS} || true
 docker-install -d -c
 echo "[$(TZ="GMT-9" date '+%Y-%m-%d %H:%M:%S')] ==> OK"
 echo
+
+#clean
+rm -rf /usr/local/bin/docker-build-stage2
 set -e
 
 exit 0
