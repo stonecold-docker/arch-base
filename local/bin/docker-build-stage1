@@ -26,17 +26,13 @@ touch "${TARGET_OUTPUT}/dev/random"
 touch "${TARGET_OUTPUT}/dev/urandom"
 /usr/local/bin/arch-bootstrap.sh -a ${TARGET_ARCH} ${TARGET_OUTPUT}
 echo "Server = ${ARCH_MIRROR}/\$repo/os/\$arch" > ${TARGET_OUTPUT}/etc/pacman.d/mirrorlist
-echo "[$(TZ="GMT-9" date '+%Y-%m-%d %H:%M:%S')] ==> OK"
-echo
-
-echo "[$(TZ="GMT-9" date '+%Y-%m-%d %H:%M:%S')] ==> Setting basic configurations"
 #resolve
 cat <<- EOF > ${TARGET_OUTPUT}/etc/resolv.conf
 nameserver 1.1.1.1
 nameserver 1.0.0.1
 EOF
 
-#scripts
+#script
 rm -rf ${TARGET_OUTPUT}/usr/local/bin/docker-*
 cp /usr/local/bin/docker-install.arch ${TARGET_OUTPUT}/usr/local/bin/docker-install
 cp /usr/local/bin/docker-adduser ${TARGET_OUTPUT}/usr/local/bin/
