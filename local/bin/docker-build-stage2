@@ -57,6 +57,7 @@ locale-gen
 
 #timezone
 if [ -e "/usr/share/zoneinfo/${TARGET_TIMEZONE}" ]; then
+	echo "${TARGET_TIMEZONE}" > ${TARGET_OUTPUT}/etc/timezone
 	rm -rf /etc/localtime
 	ln -sf /usr/share/zoneinfo/${TARGET_TIMEZONE} /etc/localtime
 fi

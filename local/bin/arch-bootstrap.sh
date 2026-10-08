@@ -31,10 +31,8 @@ PACMAN_PACKAGES=(
 #EXTRA_PACKAGES=(coreutils bash grep gawk file tar gzip systemd sed)
 BASIC_PACKAGES=(${PACMAN_PACKAGES[*]} filesystem)
 EXTRA_PACKAGES=(coreutils bash grep gawk file tar gzip systemd sed findutils)
-#DEFAULT_REPO_URL="http://mirrors.kernel.org/archlinux"
-DEFAULT_REPO_URL="https://mirror.krfoss.org/archlinux"
-#DEFAULT_ARM_REPO_URL="http://mirror.archlinuxarm.org"
-DEFAULT_ARM_REPO_URL="https://mirror.krfoss.org/archlinuxarm"
+DEFAULT_REPO_URL="http://mirrors.kernel.org/archlinux"
+DEFAULT_ARM_REPO_URL="http://mirror.archlinuxarm.org"
 DEFAULT_X86_REPO_URL="http://mirror.archlinux32.org"
 
 urlencode() {
