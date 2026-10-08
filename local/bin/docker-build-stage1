@@ -10,6 +10,7 @@ echo "[$(TZ="GMT-9" date '+%Y-%m-%d %H:%M:%S')] ==> OK"
 echo
 
 echo "[$(TZ="GMT-9" date '+%Y-%m-%d %H:%M:%S')] ==> Executing bootstrap"
+#config
 TARGET_OUTPUT=/output
 mkdir -p ${TARGET_OUTPUT}
 TARGET_ARCH=$(uname -m)
@@ -20,24 +21,21 @@ elif [ "${TARGET_ARCH}" = "aarch64" ]; then
 	ARCH_MIRROR=https://http.krfoss.org/archlinuxarm
 fi
 
+#basic
 mkdir -p ${TARGET_OUTPUT}/dev
 touch "${TARGET_OUTPUT}/dev/null"
 touch "${TARGET_OUTPUT}/dev/random"
 touch "${TARGET_OUTPUT}/dev/urandom"
 /usr/local/bin/arch-bootstrap.sh -a ${TARGET_ARCH} ${TARGET_OUTPUT}
+
+#mirror
 echo "Server = ${ARCH_MIRROR}/\$repo/os/\$arch" > ${TARGET_OUTPUT}/etc/pacman.d/mirrorlist
+
 #resolve
 cat <<- EOF > ${TARGET_OUTPUT}/etc/resolv.conf
 nameserver 1.1.1.1
 nameserver 1.0.0.1
 EOF
-
-#script
-rm -rf ${TARGET_OUTPUT}/usr/local/bin/docker-*
-cp /usr/local/bin/docker-install.arch ${TARGET_OUTPUT}/usr/local/bin/docker-install
-cp /usr/local/bin/docker-adduser ${TARGET_OUTPUT}/usr/local/bin/
-cp /usr/local/bin/docker-chown ${TARGET_OUTPUT}/usr/local/bin/
-cp /usr/local/bin/docker-run ${TARGET_OUTPUT}/usr/local/bin/
 
 
 #archlinux fix
@@ -74,6 +72,13 @@ rm -rf /build
 
 #clear
 rm -rf ${TARGET_OUTPUT}/.BUILDINFO ${TARGET_OUTPUT}/.INSTALL ${TARGET_OUTPUT}/.MTREE ${TARGET_OUTPUT}/.PKGINFO
+
+#script
+rm -rf ${TARGET_OUTPUT}/usr/local/bin/docker-*
+cp /usr/local/bin/docker-install.arch ${TARGET_OUTPUT}/usr/local/bin/docker-install
+cp /usr/local/bin/docker-adduser ${TARGET_OUTPUT}/usr/local/bin/
+cp /usr/local/bin/docker-chown ${TARGET_OUTPUT}/usr/local/bin/
+cp /usr/local/bin/docker-run ${TARGET_OUTPUT}/usr/local/bin/
 
 echo "[$(TZ="GMT-9" date '+%Y-%m-%d %H:%M:%S')] ==> OK"
 echo
