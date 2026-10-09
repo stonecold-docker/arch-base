@@ -1,4 +1,4 @@
-FROM forumi0721/alpine-base:latest as builder_stage1
+FROM forumi0721/alpine-base:latest AS builder_stage1
 
 LABEL maintainer="forumi0721@gmail.com"
 
@@ -8,7 +8,7 @@ RUN ["docker-build-stage1"]
 
 
 
-FROM forumi0721/scratch:latest as builder_stage2
+FROM forumi0721/scratch:latest AS builder_stage2
 
 LABEL maintainer="forumi0721@gmail.com"
 
