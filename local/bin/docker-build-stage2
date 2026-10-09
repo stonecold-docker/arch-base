@@ -8,18 +8,18 @@ TARGET_TIMEZONE=${TARGET_TIMEZONE:-${TIMEZONE:-Asia/Seoul}}
 TARGET_ARCH=$(uname -m)
 PACMAN_BASE_PKGS="bash coreutils diffutils filesystem findutils gettext grep gzip less pacman procps-ng sed systemd sudo haveged gawk archlinux-keyring"
 PACMAN_REMOVE_PKGS="procps-ng haveged"
-pacman -Suy --noconfirm --overwrite "*" ${PACMAN_BASE_PKGS} ${PACMAN_REMOVE_PKGS} || true
+pacman --disable-sandbox -Suy --noconfirm --overwrite "*" ${PACMAN_BASE_PKGS} ${PACMAN_REMOVE_PKGS} || true
 find /etc -name \*.pacnew -exec rm -rf {} \;
 
 #cachyos
 if [ "${TARGET_ARCH}" = "x86_64" ]; then
 	pacman-key --recv-keys F3B607488DB35A47 --keyserver keyserver.ubuntu.com
 	pacman-key --lsign-key F3B607488DB35A47
-	pacman --noconfirm -U 'https://mirror.cachyos.org/repo/x86_64/cachyos/cachyos-keyring-20240331-1-any.pkg.tar.zst' \
+	pacman --disable-sandbox --noconfirm -U 'https://mirror.cachyos.org/repo/x86_64/cachyos/cachyos-keyring-20240331-1-any.pkg.tar.zst' \
 	'https://mirror.cachyos.org/repo/x86_64/cachyos/cachyos-mirrorlist-27-1-any.pkg.tar.zst' \
 	'https://mirror.cachyos.org/repo/x86_64/cachyos/pacman-7.1.0.r9.g54d9411-4-x86_64.pkg.tar.zst'
 	sed -i '/^\[core\]$/i [cachyos]\nInclude = /etc/pacman.d/cachyos-mirrorlist\n' /etc/pacman.conf
-	pacman -Suy --noconfirm
+	pacman --disable-sandbox -Suy --noconfirm
 
 	if [ -e /etc/pacman.conf.pacnew ]; then
 		mv /etc/pacman.conf.pacnew /etc/pacman.conf
@@ -69,7 +69,7 @@ cp -ar /etc/skel/. /root/
 [ -e /usr/bin/makepkg ] && sed -i -e 's/(( EUID == 0 ))/false /g' /usr/bin/makepkg
 
 #clear
-pacman -Rsn --noconfirm ${PACMAN_REMOVE_PKGS} || true
+pacman --disable-sandbox -Rsn --noconfirm ${PACMAN_REMOVE_PKGS} || true
 docker-install -d -c
 echo "[$(TZ="GMT-9" date '+%Y-%m-%d %H:%M:%S')] ==> OK"
 echo
