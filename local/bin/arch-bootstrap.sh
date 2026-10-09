@@ -125,8 +125,8 @@ get_template_repo_url() {
 
 configure_pacman() {
   local DEST=$1 ARCH=$2
-  LC_ALL=C chroot "$DEST" /usr/bin/pacman-key --init
-  LC_ALL=C chroot "$DEST" /usr/bin/update-ca-trust
+  #LC_ALL=C chroot "$DEST" /usr/bin/pacman-key --init
+  #LC_ALL=C chroot "$DEST" /usr/bin/update-ca-trust
   debug "configure DNS and pacman"
   cp "/etc/resolv.conf" "$DEST/etc/resolv.conf"
   SERVER=$(get_template_repo_url "$REPO_URL" "$ARCH")
