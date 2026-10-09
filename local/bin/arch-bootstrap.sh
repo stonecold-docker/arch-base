@@ -189,7 +189,9 @@ configure_static_qemu() {
 install_packages() {
   local ARCH=$1 DEST=$2 PACKAGES=$3
   debug "install packages: $PACKAGES"
+  mkdir -p "$DEST/var/cache/pacman/pkg"
   LC_ALL=C chroot "$DEST" /usr/bin/pacman \
+    --cachedir /var/cache/pacman/pkg \
     --disable-sandbox \
     --noconfirm --arch $ARCH -Sy --overwrite \* $PACKAGES
 }
