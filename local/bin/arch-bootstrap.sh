@@ -189,8 +189,23 @@ configure_static_qemu() {
 install_packages() {
   local ARCH=$1 DEST=$2 PACKAGES=$3
   debug "install packages: $PACKAGES"
-  LC_ALL=C chroot "$DEST" /usr/bin/pacman \
-    --noconfirm --arch $ARCH -Sy --overwrite \* $PACKAGES
+  if ! LC_ALL=C chroot "$DEST" /usr/bin/pacman \
+    --debug --noconfirm --arch $ARCH -Sy --overwrite \* $PACKAGES ; then
+
+    echo "=== Pacman failed: diagnostics ===" >&2
+
+    echo "=== Package cache ===" >&2
+    ls -lah "$DEST/var/cache/pacman/pkg/" 2>&1 | tail -40
+
+    echo "=== Temporary package files ===" >&2
+    find "$DEST/tmp" -maxdepth 1 -type f \
+      -name '*.pkg.tar.*' -ls 2>&1 | tail -40
+
+    echo "=== Pacman log ===" >&2
+    tail -80 "$DEST/var/log/pacman.log" 2>&1 || true
+
+    return 1
+  fi
 }
 
 show_usage() {
