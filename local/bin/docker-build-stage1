@@ -30,7 +30,11 @@ touch "${TARGET_OUTPUT}/dev/urandom"
 /usr/local/bin/arch-bootstrap.sh -a ${TARGET_ARCH} ${TARGET_OUTPUT}
 
 #mirror
-echo "Server = ${ARCH_MIRROR}/\$repo/os/\$arch" > ${TARGET_OUTPUT}/etc/pacman.d/mirrorlist
+if [ "${TARGET_ARCH}" = "x86_64" ]; then
+	echo "Server = ${ARCH_MIRROR}/\$repo/os/\$arch" > ${TARGET_OUTPUT}/etc/pacman.d/mirrorlist
+elif [ "${TARGET_ARCH}" = "aarch64" ]; then
+	echo "Server = ${ARCH_MIRROR}/\$arch/\$repo" > ${TARGET_OUTPUT}/etc/pacman.d/mirrorlist
+fi
 
 #resolve
 cat <<- EOF > ${TARGET_OUTPUT}/etc/resolv.conf
