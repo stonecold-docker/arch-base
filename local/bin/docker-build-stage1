@@ -12,14 +12,14 @@ echo
 
 echo "[$(TZ="GMT-9" date '+%Y-%m-%d %H:%M:%S')] ==> Executing bootstrap"
 #config
-TARGET_OUTPUT=/output
+TARGET_OUTPUT="/output"
 mkdir -p ${TARGET_OUTPUT}
-TARGET_ARCH=$(uname -m)
+TARGET_ARCH="$(uname -m)"
 ARCH_MIRROR=
 if [ "${TARGET_ARCH}" = "x86_64" ]; then
-	ARCH_MIRROR=https://http.krfoss.org/archlinux
+	ARCH_MIRROR="https://http.krfoss.org/archlinux"
 elif [ "${TARGET_ARCH}" = "aarch64" ]; then
-	ARCH_MIRROR=https://http.krfoss.org/archlinuxarm
+	ARCH_MIRROR="https://http.krfoss.org/archlinux-arm"
 fi
 
 #basic
