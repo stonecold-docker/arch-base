@@ -125,8 +125,8 @@ get_template_repo_url() {
 
 configure_pacman() {
   local DEST=$1 ARCH=$2
-  #LC_ALL=C chroot "$DEST" /usr/bin/pacman-key --init
-  #LC_ALL=C chroot "$DEST" /usr/bin/update-ca-trust
+  LC_ALL=C chroot "$DEST" /usr/bin/pacman-key --init
+  LC_ALL=C chroot "$DEST" /usr/bin/update-ca-trust
   debug "configure DNS and pacman"
   cp "/etc/resolv.conf" "$DEST/etc/resolv.conf"
   SERVER=$(get_template_repo_url "$REPO_URL" "$ARCH")
@@ -191,16 +191,22 @@ install_packages() {
   debug "install packages: $PACKAGES"
   mkdir -p "$DEST/var/cache/pacman/pkg"
   if ! LC_ALL=C chroot "$DEST" /usr/bin/pacman \
-    --cachedir /var/cache/pacman/pkg \
     --disable-sandbox \
     --noconfirm --arch $ARCH -Sy --overwrite \* $PACKAGES ; then
-    echo 'tmp'
-    ls -la  /tmp/linux-api-headers-*.pkg.tar.xz || true
-	echo 'var'
-    ls -la  /var/cache/pacman/pkg/linux-api-headers-*.pkg.tar.xz || true
-	echo 'dest'
-    ls -la  ${DEST}/var/cache/pacman/pkg/linux-api-headers-*.pkg.tar.xz || true
-    exit 1
+    rc=$?
+    
+    echo "=== AFTER: exit=$rc ==="
+    
+    echo "=== CHROOT TMP ==="
+    ls -lah "$DEST/tmp" | tail -40
+    
+    echo "=== CHROOT CACHE ==="
+    ls -lah "$DEST/var/cache/pacman/pkg" | tail -40
+    
+    echo "=== MOUNTS ==="
+    findmnt -T "$DEST/tmp" || true
+    
+    return "$rc"
   fi
 }
 
