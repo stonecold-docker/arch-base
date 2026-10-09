@@ -190,10 +190,18 @@ install_packages() {
   local ARCH=$1 DEST=$2 PACKAGES=$3
   debug "install packages: $PACKAGES"
   mkdir -p "$DEST/var/cache/pacman/pkg"
-  LC_ALL=C chroot "$DEST" /usr/bin/pacman \
+  if ! LC_ALL=C chroot "$DEST" /usr/bin/pacman \
     --cachedir /var/cache/pacman/pkg \
     --disable-sandbox \
-    --noconfirm --arch $ARCH -Sy --overwrite \* $PACKAGES
+    --noconfirm --arch $ARCH -Sy --overwrite \* $PACKAGES ; then
+    echo 'tmp'
+    ls -la  /tmp/linux-api-headers-*.pkg.tar.xz || true
+	echo 'var'
+    ls -la  /var/cache/pacman/pkg/linux-api-headers-*.pkg.tar.xz || true
+	echo 'dest'
+    ls -la  ${DEST}/var/cache/pacman/pkg/linux-api-headers-*.pkg.tar.xz || true
+    exit 1
+  fi
 }
 
 show_usage() {
